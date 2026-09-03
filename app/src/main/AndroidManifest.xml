@@ -28,6 +28,11 @@
             android:name=".MainActivity"
             android:exported="false" />
 
+        <!-- Adicionada a AdminActivity para acesso do perfil de Suporte/Admin -->
+        <activity
+            android:name=".AdminActivity"
+            android:exported="false" />
+
     </application>
 
 </manifest>

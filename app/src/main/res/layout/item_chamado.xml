@@ -29,7 +29,7 @@
                 android:id="@+id/tvPrioridadeItem"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
+                android:layout_alignParentEnd="true"
                 android:textColor="#D32F2F"
                 android:textSize="12sp"
                 android:textStyle="bold" />
@@ -67,6 +67,19 @@
             android:textColor="#388E3C"
             android:textSize="12sp"
             android:textStyle="bold" />
+
+        <!-- Campo adicionado para exibir a resposta/solução do administrador -->
+        <TextView
+            android:id="@+id/tvDevolutivaItem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="#E8F5E9"
+            android:padding="8dp"
+            android:textColor="#1B5E20"
+            android:textSize="13sp"
+            android:textStyle="italic"
+            android:visibility="gone" />
 
     </LinearLayout>
 
