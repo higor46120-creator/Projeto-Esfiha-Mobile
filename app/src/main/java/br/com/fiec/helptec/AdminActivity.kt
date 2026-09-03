@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -15,15 +16,19 @@ class AdminActivity : AppCompatActivity() {
     private lateinit var adapter: ChamadoAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        TemaUtil.aplicarTemaSalvo(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_admin)
 
         val rvChamadosAdmin = findViewById<RecyclerView>(R.id.rvChamadosAdmin)
         val btnSairAdmin = findViewById<Button>(R.id.btnSairAdmin)
+        val btnAlternarTemaAdmin = findViewById<ImageButton>(R.id.btnAlternarTemaAdmin)
 
         btnSairAdmin.bringToFront()
+        btnAlternarTemaAdmin.setOnClickListener {
+            TemaUtil.alternarTema(this)
+        }
 
-        // Inicializa o adapter passando uma função lambda de clique para tratar a alteração de status
         adapter = ChamadoAdapter(ChamadoRepository.listaChamados) { chamado, posicao ->
             mostrarOpcoesStatus(chamado, posicao)
         }
@@ -31,7 +36,6 @@ class AdminActivity : AppCompatActivity() {
         rvChamadosAdmin.layoutManager = LinearLayoutManager(this)
         rvChamadosAdmin.adapter = adapter
 
-        // Encerramento de sessão do Administrador
         btnSairAdmin.setOnClickListener {
             val intent = Intent(this, LoginActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -40,7 +44,6 @@ class AdminActivity : AppCompatActivity() {
         }
     }
 
-    // Abre modal para alteração do status do chamado selecionado
     private fun mostrarOpcoesStatus(chamado: Chamado, posicao: Int) {
         val opcoes = arrayOf("Aberto", "Em Andamento", "Concluído")
 
@@ -49,7 +52,6 @@ class AdminActivity : AppCompatActivity() {
             .setItems(opcoes) { _, which ->
                 val novoStatus = opcoes[which]
 
-                // Se selecionar 'Concluído', exige o preenchimento da devolutiva
                 if (novoStatus == "Concluído") {
                     solicitarDevolutiva(chamado, posicao)
                 } else {
@@ -62,7 +64,6 @@ class AdminActivity : AppCompatActivity() {
             .show()
     }
 
-    // Modal para capturar a explicação/solução técnica do chamado
     private fun solicitarDevolutiva(chamado: Chamado, posicao: Int) {
         val etDevolutiva = EditText(this).apply {
             hint = "Descreva a solução aplicada..."
@@ -76,11 +77,10 @@ class AdminActivity : AppCompatActivity() {
             .setPositiveButton("Salvar e Concluir") { _, _ ->
                 val textoDevolutiva = etDevolutiva.text.toString().trim()
 
-                // Só conclui se o campo de devolutiva não estiver vazio
                 if (textoDevolutiva.isNotBlank()) {
                     chamado.status = "Concluído"
                     chamado.devolutiva = textoDevolutiva
-                    adapter.notifyItemChanged(posicao) // Atualiza o item na lista do RecyclerView
+                    adapter.notifyItemChanged(posicao)
                     Toast.makeText(this, "Chamado concluído com sucesso!", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(this, "É necessário preencher a devolutiva para concluir.", Toast.LENGTH_SHORT).show()

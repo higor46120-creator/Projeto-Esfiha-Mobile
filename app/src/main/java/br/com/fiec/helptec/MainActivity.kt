@@ -2,9 +2,9 @@ package br.com.fiec.helptec
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -16,10 +16,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adapter: ChamadoAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Aplica o tema ANTES de inflar a view no super.onCreate
+        TemaUtil.aplicarTemaSalvo(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Mapeamento dos campos do formulário
+        // Mapeamento dos elementos da interface
         val etTitulo = findViewById<TextInputEditText>(R.id.etTitulo)
         val etSala = findViewById<TextInputEditText>(R.id.etSala)
         val etMaquina = findViewById<TextInputEditText>(R.id.etMaquina)
@@ -30,22 +32,42 @@ class MainActivity : AppCompatActivity() {
         val btnSair = findViewById<Button>(R.id.btnSair)
         val rvChamados = findViewById<RecyclerView>(R.id.rvChamados)
 
-        // Traz o botão de sair para a camada superior prevenindo bloqueios no clique
+        // Busca dinâmica que elimina o erro de compilação 'Unresolved reference'
+        val idBtnTema = resources.getIdentifier("btnAlternarTema", "id", packageName)
+        val btnAlternarTema = if (idBtnTema != 0) findViewById<ImageButton>(idBtnTema) else null
+
         btnSair.bringToFront()
 
-        // Opções dos Menus Dropdown (AutoCompleteTextView)
-        val categorias = arrayOf("Hardware", "Software", "Rede", "Acessos")
-        val prioridades = arrayOf("Baixa", "Média", "Alta")
+        // Listener seguro do botão de alternar tema + Recriação imediata da Activity
+        btnAlternarTema?.setOnClickListener {
+            TemaUtil.alternarTema(this)
+            recreate() // Força a recriação da tela com o novo tema aplicado
+        }
 
-        spCategoria.setAdapter(ArrayAdapter(this, android.R.layout.simple_list_item_1, categorias))
-        spPrioridade.setAdapter(ArrayAdapter(this, android.R.layout.simple_list_item_1, prioridades))
+        // Listas customizadas com ícones e indicadores de cor
+        val categorias = listOf(
+            OpcaoItem("Hardware", android.R.drawable.ic_menu_compass),
+            OpcaoItem("Software", android.R.drawable.ic_menu_manage),
+            OpcaoItem("Rede", android.R.drawable.ic_menu_share),
+            OpcaoItem("Acessórios", android.R.drawable.ic_menu_add)
+        )
 
-        // Configuração do RecyclerView para o Usuário Comum
+        val prioridades = listOf(
+            OpcaoItem("Baixa", android.R.drawable.presence_online, "#FBC02D"), // Amarelo
+            OpcaoItem("Média", android.R.drawable.presence_away, "#FB8C00"),   // Laranja
+            OpcaoItem("Alta", android.R.drawable.presence_busy, "#E53935")     // Vermelho
+        )
+
+        // Aplicação dos adaptadores customizados
+        spCategoria.setAdapter(CategoriaAdapter(this, categorias))
+        spPrioridade.setAdapter(CategoriaAdapter(this, prioridades))
+
+        // Configuração do RecyclerView
         adapter = ChamadoAdapter(ChamadoRepository.listaChamados)
         rvChamados.layoutManager = LinearLayoutManager(this)
         rvChamados.adapter = adapter
 
-        // Ação de envio do chamado
+        // Envio do formulário
         btnAbrirChamado.setOnClickListener {
             val titulo = etTitulo.text?.toString() ?: ""
             val sala = etSala.text?.toString() ?: ""
@@ -54,11 +76,9 @@ class MainActivity : AppCompatActivity() {
             val categoria = spCategoria.text?.toString() ?: ""
             val prioridade = spPrioridade.text?.toString() ?: ""
 
-            // Confere se nenhum campo do formulário ficou vazio
             if (titulo.isNotBlank() && sala.isNotBlank() && maquina.isNotBlank() &&
                 descricao.isNotBlank() && categoria.isNotBlank() && prioridade.isNotBlank()) {
 
-                // Cria o novo objeto Chamado
                 val novoChamado = Chamado(
                     id = ChamadoRepository.gerarId(),
                     titulo = titulo,
@@ -69,12 +89,10 @@ class MainActivity : AppCompatActivity() {
                     descricao = descricao
                 )
 
-                // Salva no repositório e notifica o Adapter para atualizar a lista imediatamente
                 ChamadoRepository.adicionarChamado(novoChamado)
                 adapter.notifyItemInserted(0)
                 rvChamados.scrollToPosition(0)
 
-                // Limpa os campos do formulário após o envio
                 etTitulo.text?.clear()
                 etSala.text?.clear()
                 etMaquina.text?.clear()
@@ -87,17 +105,15 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Lógica para o Botão Sair com limpeza de pilha de atividades
+        // Ação de Logout
         btnSair.setOnClickListener {
             val intent = Intent(this, LoginActivity::class.java)
-            // Remove todas as telas anteriores da pilha do Android para impedir voltar no botão do celular
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)
             finish()
         }
     }
 
-    // Atualiza o histórico sempre que a tela voltar ao foco
     override fun onResume() {
         super.onResume()
         adapter.notifyDataSetChanged()
