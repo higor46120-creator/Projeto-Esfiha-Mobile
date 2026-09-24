@@ -2,66 +2,83 @@ package br.com.fiec.helptec
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Button
+import android.util.Log
 import android.widget.ImageButton
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.textfield.TextInputEditText
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.SignInButton
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.tasks.Task
 
 class LoginActivity : AppCompatActivity() {
 
+    private lateinit var googleSignInClient: GoogleSignInClient
+
+    // Callback para capturar o resultado do Google Sign-In
+    private val googleSignInLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        handleSignInResult(task)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        // 1. Aplica o tema salvo ANTES de inflar o layout
         TemaUtil.aplicarTemaSalvo(this)
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
-        // Busca dinâmica de IDs para evitar o erro 'Unresolved reference' do compilador
-        val idEmail = resources.getIdentifier("etEmail", "id", packageName)
-        val idSenha = resources.getIdentifier("etSenha", "id", packageName)
-        val idBtnLogin = resources.getIdentifier("btnLogin", "id", packageName)
-        val idBtnTema = resources.getIdentifier("btnAlternarTema", "id", packageName)
-
-        // Mapeamento seguro dos componentes
-        val etEmail = if (idEmail != 0) findViewById<TextInputEditText>(idEmail) else null
-        val etSenha = if (idSenha != 0) findViewById<TextInputEditText>(idSenha) else null
-        val btnLogin = if (idBtnLogin != 0) findViewById<Button>(idBtnLogin) else null
-        val btnAlternarTema = if (idBtnTema != 0) findViewById<ImageButton>(idBtnTema) else null
-
-        // Listener para alternar tema
+        // 2. Configuração da troca de tema no botão superior
+        val btnAlternarTema = findViewById<ImageButton>(R.id.btnAlternarTema)
         btnAlternarTema?.setOnClickListener {
             TemaUtil.alternarTema(this)
-            recreate()
+            recreate() // Recria a activity para aplicar as novas cores
         }
 
-        // Ação de Login com validação try-catch
-        btnLogin?.setOnClickListener {
-            val email = etEmail?.text?.toString()?.trim() ?: ""
-            val senha = etSenha?.text?.toString()?.trim() ?: ""
+        // 3. Configuração do Google Sign-In com o ID do Cliente WEB
+        val webClientId = "801876311719-o76pql4jcc9uc5m58qtvp7m7dvq8g6ap.apps.googleusercontent.com"
 
-            try {
-                if (email.isBlank() || senha.isBlank()) {
-                    throw IllegalArgumentException("Preencha e-mail e senha.")
-                }
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(webClientId)
+            .requestEmail()
+            .build()
 
-                if (email == "admin@fiec.com" && senha == "admin123") {
-                    val intent = Intent(this, AdminActivity::class.java)
-                    startActivity(intent)
-                    finish()
-                } else if (email == "user@fiec.com" && senha == "123456") {
-                    val intent = Intent(this, MainActivity::class.java)
-                    startActivity(intent)
-                    finish()
-                } else {
-                    throw SecurityException("Usuário ou senha incorreto")
-                }
+        googleSignInClient = GoogleSignIn.getClient(this, gso)
 
-            } catch (e: SecurityException) {
-                Toast.makeText(this, e.message, Toast.LENGTH_SHORT).show()
-            } catch (e: IllegalArgumentException) {
-                Toast.makeText(this, e.message, Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) {
-                Toast.makeText(this, "Erro no login: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
+        // 4. Configuração do clique no botão do Google
+        val btnLoginGoogle = findViewById<SignInButton>(R.id.btnLoginGoogle)
+        btnLoginGoogle.setOnClickListener {
+            signIn()
+        }
+    }
+
+    private fun signIn() {
+        val signInIntent = googleSignInClient.signInIntent
+        googleSignInLauncher.launch(signInIntent)
+    }
+
+    private fun handleSignInResult(completedTask: Task<GoogleSignInAccount>) {
+        try {
+            val account = completedTask.getResult(ApiException::class.java)
+
+            val email = account.email
+            val displayName = account.displayName
+            Toast.makeText(this, "Bem-vindo, $displayName!", Toast.LENGTH_SHORT).show()
+
+            // Navega para a MainActivity do HelpTec
+            val intent = Intent(this, MainActivity::class.java)
+            startActivity(intent)
+            finish()
+
+        } catch (e: ApiException) {
+            Log.e("HelpTecLogin", "Erro no login Google. Código: ${e.statusCode}")
+            Toast.makeText(this, "Erro ao autenticar. Código: ${e.statusCode}", Toast.LENGTH_SHORT).show()
         }
     }
 }
