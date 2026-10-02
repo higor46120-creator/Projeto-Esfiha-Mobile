@@ -73,7 +73,7 @@
                 android:textColor="?android:attr/textColorPrimary" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Campo Senha com Cadeado e Olhinho para alternar visibilidade -->
+        <!-- Campo Senha com Cadeado -->
         <com.google.android.material.textfield.TextInputLayout
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
@@ -93,12 +93,20 @@
                 android:textColor="?android:attr/textColorPrimary" />
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Progress Bar do Login -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:visibility="gone" />
+
         <!-- Botão Entrar -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnLogin"
             android:layout_width="match_parent"
             android:layout_height="52dp"
-            android:layout_marginTop="28dp"
+            android:layout_marginTop="16dp"
             android:backgroundTint="#1E88E5"
             android:text="ENTRAR"
             android:textColor="#FFFFFF"

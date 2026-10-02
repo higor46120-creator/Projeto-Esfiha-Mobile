@@ -2,7 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Permissão para acesso à internet (já existente) -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Permissão para exibir notificações (obrigatória a partir do Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:allowBackup="true"
@@ -13,6 +17,7 @@
         android:roundIcon="@mipmap/helptec"
         android:supportsRtl="true"
         android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+        android:usesCleartextTraffic="true"
         tools:targetApi="31">
 
         <activity
@@ -20,6 +25,7 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -32,6 +38,21 @@
         <activity
             android:name=".AdminActivity"
             android:exported="false" />
+
+        <!-- Registra o Serviço de Mensagens do Firebase -->
+        <!-- NOTA: Se colocou o ficheiro no pacote .service, altere para android:name=".service.MyFirebaseMessagingService" -->
+        <service
+            android:name=".MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- Canal Padrão para Notificações em BACKGROUND recebidas do Firebase -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="@string/default_notification_channel_id" />
 
     </application>
 

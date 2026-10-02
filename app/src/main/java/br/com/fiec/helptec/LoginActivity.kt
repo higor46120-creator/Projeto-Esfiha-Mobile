@@ -3,10 +3,16 @@ package br.com.fiec.helptec
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+import br.com.fiec.helptec.data.repository.HelpTecRepository
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -14,12 +20,13 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.SignInButton
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.tasks.Task
+import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var googleSignInClient: GoogleSignInClient
+    private val repository = HelpTecRepository()
 
-    // Callback para capturar o resultado do Google Sign-In
     private val googleSignInLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -28,22 +35,35 @@ class LoginActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // 1. Aplica o tema salvo ANTES de inflar o layout
         TemaUtil.aplicarTemaSalvo(this)
 
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
-        // 2. Configuração da troca de tema no botão superior
         val btnAlternarTema = findViewById<ImageButton>(R.id.btnAlternarTema)
         btnAlternarTema?.setOnClickListener {
             TemaUtil.alternarTema(this)
-            recreate() // Recria a activity para aplicar as novas cores
+            recreate()
         }
 
-        // 3. Configuração do Google Sign-In com o ID do Cliente WEB
-        val webClientId = "801876311719-o76pql4jcc9uc5m58qtvp7m7dvq8g6ap.apps.googleusercontent.com"
+        val btnLogin = findViewById<Button>(R.id.btnLogin)
+        val etEmail = findViewById<EditText>(R.id.etEmail)
+        val etSenha = findViewById<EditText>(R.id.etSenha)
+        val progressBar = findViewById<ProgressBar>(R.id.progressBar)
 
+        btnLogin.setOnClickListener {
+            val email = etEmail.text.toString().trim()
+            val senha = etSenha.text.toString().trim()
+
+            if (email.isEmpty() || senha.isEmpty()) {
+                Toast.makeText(this, "Preencha todos os campos", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            executarLoginApi(email, senha, btnLogin, progressBar)
+        }
+
+        val webClientId = "801876311719-o76pql4jcc9uc5m58qtvp7m7dvq8g6ap.apps.googleusercontent.com"
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(webClientId)
             .requestEmail()
@@ -51,14 +71,38 @@ class LoginActivity : AppCompatActivity() {
 
         googleSignInClient = GoogleSignIn.getClient(this, gso)
 
-        // 4. Configuração do clique no botão do Google
         val btnLoginGoogle = findViewById<SignInButton>(R.id.btnLoginGoogle)
-        btnLoginGoogle.setOnClickListener {
-            signIn()
+        btnLoginGoogle?.setOnClickListener {
+            signInGoogle()
         }
     }
 
-    private fun signIn() {
+    private fun executarLoginApi(
+        email: String,
+        senha: String,
+        btnLogin: Button,
+        progressBar: ProgressBar?
+    ) {
+        progressBar?.visibility = View.VISIBLE
+        btnLogin.isEnabled = false
+
+        lifecycleScope.launch {
+            val result = repository.login(email, senha)
+
+            progressBar?.visibility = View.GONE
+            btnLogin.isEnabled = true
+
+            if (result.isSuccess) {
+                Toast.makeText(this@LoginActivity, "Login realizado com sucesso!", Toast.LENGTH_SHORT).show()
+                irParaMain()
+            } else {
+                val error = result.exceptionOrNull()
+                Toast.makeText(this@LoginActivity, "Erro: ${error?.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun signInGoogle() {
         val signInIntent = googleSignInClient.signInIntent
         googleSignInLauncher.launch(signInIntent)
     }
@@ -66,19 +110,18 @@ class LoginActivity : AppCompatActivity() {
     private fun handleSignInResult(completedTask: Task<GoogleSignInAccount>) {
         try {
             val account = completedTask.getResult(ApiException::class.java)
-
-            val email = account.email
             val displayName = account.displayName
             Toast.makeText(this, "Bem-vindo, $displayName!", Toast.LENGTH_SHORT).show()
-
-            // Navega para a MainActivity do HelpTec
-            val intent = Intent(this, MainActivity::class.java)
-            startActivity(intent)
-            finish()
-
+            irParaMain()
         } catch (e: ApiException) {
             Log.e("HelpTecLogin", "Erro no login Google. Código: ${e.statusCode}")
-            Toast.makeText(this, "Erro ao autenticar. Código: ${e.statusCode}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Erro ao autenticar via Google. Código: ${e.statusCode}", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun irParaMain() {
+        val intent = Intent(this, MainActivity::class.java)
+        startActivity(intent)
+        finish()
     }
 }
