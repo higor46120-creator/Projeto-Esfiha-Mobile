@@ -2,11 +2,12 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.google.android.libraries.mapsplatform.secrets.gradle.plugin)
 }
 
 android {
     namespace = "br.com.fiec.helptec"
-    compileSdk = 37 // Atualizado para 37 para satisfazer as dependências do core-ktx e activity
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "br.com.fiec.helptec"
@@ -48,6 +49,12 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
+
+    // Google Maps SDK & Location Services
+    implementation("com.google.android.gms:play-services-maps:19.0.0")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation("com.google.maps.android:maps-compose:4.3.3")
+
     // Firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.messaging)
@@ -59,6 +66,23 @@ dependencies {
 
     // Autenticação Google Sign-In
     implementation("com.google.android.gms:play-services-auth:21.2.0")
+
+    // Retrofit & OkHttp (Comunicação com o Spring Boot)
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("androidx.credentials:credentials:1.3.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.3.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
+    // Coroutines & Lifecycle
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+
+
 
     // Testes
     testImplementation(libs.junit)

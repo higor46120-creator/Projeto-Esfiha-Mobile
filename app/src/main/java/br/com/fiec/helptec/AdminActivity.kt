@@ -1,97 +1,158 @@
 package br.com.fiec.helptec
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Button
-import android.widget.EditText
-import android.widget.ImageButton
+import android.util.Log
+import android.widget.ArrayAdapter
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import br.com.fiec.helptec.data.Chamado
+import br.com.fiec.helptec.data.RetrofitClient
+import br.com.fiec.helptec.databinding.ActivityAdminBinding
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class AdminActivity : AppCompatActivity() {
 
-    private lateinit var adapter: ChamadoAdapter
+    private lateinit var binding: ActivityAdminBinding
+    private lateinit var chamadoAdapter: ChamadoAdapter
+
+    // Declarado como var para permitir reatribuição ao selecionar um chamado
+    private var chamadoSelecionado: Chamado? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        TemaUtil.aplicarTemaSalvo(this)
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_admin)
 
-        val rvChamadosAdmin = findViewById<RecyclerView>(R.id.rvChamadosAdmin)
-        val btnSairAdmin = findViewById<Button>(R.id.btnSairAdmin)
-        val btnAlternarTemaAdmin = findViewById<ImageButton>(R.id.btnAlternarTemaAdmin)
+        binding = ActivityAdminBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        btnSairAdmin.bringToFront()
-        btnAlternarTemaAdmin.setOnClickListener {
-            TemaUtil.alternarTema(this)
-        }
+        configurarDropdowns()
+        configurarRecyclerView()
+        configurarListeners()
 
-        adapter = ChamadoAdapter(ChamadoRepository.listaChamados) { chamado, posicao ->
-            mostrarOpcoesStatus(chamado, posicao)
-        }
+        carregarChamados()
+    }
 
-        rvChamadosAdmin.layoutManager = LinearLayoutManager(this)
-        rvChamadosAdmin.adapter = adapter
+    private fun configurarDropdowns() {
+        val statusList = listOf("ABERTO", "EM_ANDAMENTO", "CONCLUIDO", "CANCELADO")
+        val adapterStatus = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, statusList)
+        binding.spStatus.setAdapter(adapterStatus)
+    }
 
-        btnSairAdmin.setOnClickListener {
-            val intent = Intent(this, LoginActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
-            finish()
+    private fun configurarRecyclerView() {
+        chamadoAdapter = ChamadoAdapter(onItemClick = { chamado, _ ->
+            chamadoSelecionado = chamado
+            preencherCamposEdicao(chamado)
+        })
+
+        binding.rvChamadosAdmin.apply {
+            layoutManager = LinearLayoutManager(this@AdminActivity)
+            adapter = chamadoAdapter
         }
     }
 
-    private fun mostrarOpcoesStatus(chamado: Chamado, posicao: Int) {
-        val opcoes = arrayOf("Aberto", "Em Andamento", "Concluído")
+    private fun preencherCamposEdicao(chamado: Chamado) {
+        binding.tvChamadoSelecionado.text = "Editando Chamado #${chamado.id ?: ""}: ${chamado.titulo}"
+        binding.etDevolutiva.setText(chamado.devolutiva ?: "")
 
-        AlertDialog.Builder(this)
-            .setTitle("Atualizar Status do Chamado #${chamado.id}")
-            .setItems(opcoes) { _, which ->
-                val novoStatus = opcoes[which]
+        // Uso de setText(..., false) para evitar reatribuição 'val'
+        binding.spStatus.setText(chamado.status, false)
+    }
 
-                if (novoStatus == "Concluído") {
-                    solicitarDevolutiva(chamado, posicao)
-                } else {
-                    chamado.status = novoStatus
-                    adapter.notifyItemChanged(posicao)
-                    Toast.makeText(this, "Status alterado para: ${chamado.status}", Toast.LENGTH_SHORT).show()
+    private fun configurarListeners() {
+        binding.btnSalvarAtualizacao.setOnClickListener {
+            salvarAtualizacao()
+        }
+
+        binding.btnAlternarTemaAdmin.setOnClickListener {
+            alternarTema()
+        }
+
+        binding.btnSairAdmin.setOnClickListener {
+            realizarLogout()
+        }
+    }
+
+    private fun salvarAtualizacao() {
+        val chamado = chamadoSelecionado
+        if (chamado == null || chamado.id == null) {
+            Toast.makeText(this, "Selecione um chamado na lista primeiro", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val novoStatus = binding.spStatus.text.toString().trim()
+        val novaDevolutiva = binding.etDevolutiva.text.toString().trim()
+
+        val chamadoAtualizado = chamado.copy(
+            status = novoStatus,
+            devolutiva = novaDevolutiva
+        )
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val response = RetrofitClient.getInstance(applicationContext).criarChamado(chamadoAtualizado)
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        Toast.makeText(this@AdminActivity, "Chamado atualizado com sucesso!", Toast.LENGTH_SHORT).show()
+                        limparCampos()
+                        carregarChamados()
+                    } else {
+                        Toast.makeText(this@AdminActivity, "Erro ao atualizar: ${response.code()}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("AdminActivity", "Erro ao atualizar chamado", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@AdminActivity, "Falha de conexão com o servidor", Toast.LENGTH_SHORT).show()
                 }
             }
-            .setNegativeButton("Cancelar", null)
-            .show()
-    }
-
-    private fun solicitarDevolutiva(chamado: Chamado, posicao: Int) {
-        val etDevolutiva = EditText(this).apply {
-            hint = "Descreva a solução aplicada..."
-            setText(chamado.devolutiva)
         }
-
-        AlertDialog.Builder(this)
-            .setTitle("Devolutiva do Atendimento")
-            .setMessage("Informe a solução do chamado antes de concluir:")
-            .setView(etDevolutiva)
-            .setPositiveButton("Salvar e Concluir") { _, _ ->
-                val textoDevolutiva = etDevolutiva.text.toString().trim()
-
-                if (textoDevolutiva.isNotBlank()) {
-                    chamado.status = "Concluído"
-                    chamado.devolutiva = textoDevolutiva
-                    adapter.notifyItemChanged(posicao)
-                    Toast.makeText(this, "Chamado concluído com sucesso!", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this, "É necessário preencher a devolutiva para concluir.", Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNegativeButton("Cancelar", null)
-            .show()
     }
 
-    override fun onResume() {
-        super.onResume()
-        adapter.notifyDataSetChanged()
+    private fun carregarChamados() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val response = RetrofitClient.getInstance(applicationContext).listarChamados()
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful && response.body() != null) {
+                        chamadoAdapter.atualizarLista(response.body()!!)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("AdminActivity", "Erro ao carregar chamados", e)
+            }
+        }
+    }
+
+    private fun alternarTema() {
+        val modoAtual = AppCompatDelegate.getDefaultNightMode()
+        if (modoAtual == AppCompatDelegate.MODE_NIGHT_YES) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+        }
+    }
+
+    private fun realizarLogout() {
+        getSharedPreferences("auth_prefs", Context.MODE_PRIVATE).edit().clear().apply()
+        Toast.makeText(this, "Sessão encerrada", Toast.LENGTH_SHORT).show()
+
+        val intent = Intent(this, LoginActivity::class.java)
+        startActivity(intent)
+        finish()
+    }
+
+    private fun limparCampos() {
+        chamadoSelecionado = null
+        binding.tvChamadoSelecionado.text = "Nenhum chamado selecionado"
+        binding.etDevolutiva.text?.clear()
+
+        // Uso de setText("", false) sem tentar reatribuir 'val'
+        binding.spStatus.setText("", false)
     }
 }

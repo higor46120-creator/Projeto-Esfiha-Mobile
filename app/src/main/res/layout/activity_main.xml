@@ -11,12 +11,14 @@
         android:orientation="vertical"
         android:padding="16dp">
 
+        <!-- CABEÇALHO COM TÍTULO E BOTOES DE TEMA E LOGOUT -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp">
+            android:layout_marginBottom="12dp">
 
             <TextView
+                android:id="@+id/tvTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentStart="true"
@@ -53,6 +55,49 @@
             </LinearLayout>
         </RelativeLayout>
 
+        <!-- BOTÃO DE LOGIN COM O GOOGLE -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnLoginGoogle"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginBottom="16dp"
+            android:text="Entrar com o Google"
+            android:textAllCaps="false"
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            app:cornerRadius="8dp"
+            app:strokeColor="#CCCCCC"
+            app:strokeWidth="1dp" />
+
+        <!-- BOTÃO PARA ABRIR O MAPA -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnAbrirMapa"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginBottom="8dp"
+            android:text="VER MAPA DE LOCALIZAÇÃO"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            app:cornerRadius="8dp"
+            app:icon="@android:drawable/ic_dialog_map"
+            app:iconGravity="textStart" />
+
+        <!-- TEXTVIEW PARA EXIBIR COORDENADAS GPS -->
+        <TextView
+            android:id="@+id/tvCoordenadas"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:gravity="center"
+            android:text="Coordenadas GPS: Nenhuma captura"
+            android:textColor="?android:attr/textColorSecondary"
+            android:textSize="13sp"
+            android:textStyle="italic" />
+
+        <!-- FORMULÁRIO DE ABERTURA DE CHAMADO -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -66,6 +111,7 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
+                <!-- Título do Problema -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
@@ -79,6 +125,7 @@
                         android:textColor="?android:attr/textColorPrimary" />
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <!-- Sala e Máquina -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -116,6 +163,7 @@
                     </com.google.android.material.textfield.TextInputLayout>
                 </LinearLayout>
 
+                <!-- Categoria e Prioridade -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -155,6 +203,7 @@
                     </com.google.android.material.textfield.TextInputLayout>
                 </LinearLayout>
 
+                <!-- Descrição -->
                 <com.google.android.material.textfield.TextInputLayout
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
@@ -171,6 +220,7 @@
                         android:textColor="?android:attr/textColorPrimary" />
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <!-- Botão Enviar Chamado -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnAbrirChamado"
                     android:layout_width="match_parent"
@@ -186,6 +236,7 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- SEÇÃO DE HISTÓRICO -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

@@ -1,5 +1,7 @@
 package br.com.fiec.helptec
 
+import br.com.fiec.helptec.data.Chamado
+
 object ChamadoRepository {
     val listaChamados = mutableListOf<Chamado>()
     private var contadorId = 1

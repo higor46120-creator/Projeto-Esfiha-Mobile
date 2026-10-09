@@ -1,39 +1,37 @@
 package br.com.fiec.helptec
 
-import android.app.Activity
 import android.content.Context
 import androidx.appcompat.app.AppCompatDelegate
 
 object TemaUtil {
 
     private const val PREFS_NAME = "helptec_prefs"
-    private const val KEY_DARK_MODE = "modo_escuro"
+    private const val KEY_DARK_MODE = "dark_mode"
 
     fun aplicarTemaSalvo(context: Context) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val isDarkMode = prefs.getBoolean(KEY_DARK_MODE, true)
+        val isDarkMode = prefs.getBoolean(KEY_DARK_MODE, false)
 
-        if (isDarkMode) {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+        val mode = if (isDarkMode) {
+            AppCompatDelegate.MODE_NIGHT_YES
         } else {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+            AppCompatDelegate.MODE_NIGHT_NO
         }
+        AppCompatDelegate.setDefaultNightMode(mode)
     }
 
-    fun alternarTema(activity: Activity) {
-        val prefs = activity.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val isDarkModeAtual = prefs.getBoolean(KEY_DARK_MODE, true)
-        val novoModo = !isDarkModeAtual
+    fun alternarTema(context: Context) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val isDarkMode = prefs.getBoolean(KEY_DARK_MODE, false)
+        val novoModo = !isDarkMode
 
         prefs.edit().putBoolean(KEY_DARK_MODE, novoModo).apply()
 
-        if (novoModo) {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+        val mode = if (novoModo) {
+            AppCompatDelegate.MODE_NIGHT_YES
         } else {
-            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+            AppCompatDelegate.MODE_NIGHT_NO
         }
-
-        // Força o recarregamento imediato da Activity atual
-        activity.recreate()
+        AppCompatDelegate.setDefaultNightMode(mode)
     }
 }

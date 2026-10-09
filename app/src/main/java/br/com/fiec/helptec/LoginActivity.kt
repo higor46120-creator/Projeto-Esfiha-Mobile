@@ -35,15 +35,12 @@ class LoginActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        TemaUtil.aplicarTemaSalvo(this)
-
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
         val btnAlternarTema = findViewById<ImageButton>(R.id.btnAlternarTema)
         btnAlternarTema?.setOnClickListener {
             TemaUtil.alternarTema(this)
-            recreate()
         }
 
         val btnLogin = findViewById<Button>(R.id.btnLogin)
@@ -51,9 +48,9 @@ class LoginActivity : AppCompatActivity() {
         val etSenha = findViewById<EditText>(R.id.etSenha)
         val progressBar = findViewById<ProgressBar>(R.id.progressBar)
 
-        btnLogin.setOnClickListener {
-            val email = etEmail.text.toString().trim()
-            val senha = etSenha.text.toString().trim()
+        btnLogin?.setOnClickListener {
+            val email = etEmail?.text?.toString()?.trim().orEmpty()
+            val senha = etSenha?.text?.toString()?.trim().orEmpty()
 
             if (email.isEmpty() || senha.isEmpty()) {
                 Toast.makeText(this, "Preencha todos os campos", Toast.LENGTH_SHORT).show()
@@ -116,6 +113,9 @@ class LoginActivity : AppCompatActivity() {
         } catch (e: ApiException) {
             Log.e("HelpTecLogin", "Erro no login Google. Código: ${e.statusCode}")
             Toast.makeText(this, "Erro ao autenticar via Google. Código: ${e.statusCode}", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Log.e("HelpTecLogin", "Erro ao processar login Google", e)
+            Toast.makeText(this, "Erro ao processar login: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 

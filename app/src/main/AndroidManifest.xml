@@ -2,13 +2,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Permissão para acesso à internet (já existente) -->
+    <!-- Permissões de Rede e Localização -->
     <uses-permission android:name="android.permission.INTERNET" />
-
-    <!-- Permissão para exibir notificações (obrigatória a partir do Android 13+) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
+        android:name=".HelpTecApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -20,12 +21,22 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
 
+        <!-- Valor da apiKey inserido diretamente na meta-data do Google Maps -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyCp6C3B7wCMuJlR4ZEpPvSWfIpOFCgriYg" />
+
+        <!-- Activity do Google Maps -->
+        <activity
+            android:name=".MapsActivity"
+            android:exported="false"
+            android:label="@string/title_activity_maps" />
+
         <activity
             android:name=".LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -34,13 +45,10 @@
             android:name=".MainActivity"
             android:exported="false" />
 
-        <!-- Adicionada a AdminActivity para acesso do perfil de Suporte/Admin -->
         <activity
             android:name=".AdminActivity"
             android:exported="false" />
 
-        <!-- Registra o Serviço de Mensagens do Firebase -->
-        <!-- NOTA: Se colocou o ficheiro no pacote .service, altere para android:name=".service.MyFirebaseMessagingService" -->
         <service
             android:name=".MyFirebaseMessagingService"
             android:exported="false">
@@ -49,7 +57,6 @@
             </intent-filter>
         </service>
 
-        <!-- Canal Padrão para Notificações em BACKGROUND recebidas do Firebase -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="@string/default_notification_channel_id" />

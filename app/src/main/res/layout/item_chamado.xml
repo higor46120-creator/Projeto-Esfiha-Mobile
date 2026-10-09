@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginVertical="4dp"
+    android:layout_marginBottom="8dp"
     app:cardCornerRadius="8dp"
     app:cardElevation="2dp">
 
@@ -13,15 +13,18 @@
         android:orientation="vertical"
         android:padding="12dp">
 
-        <RelativeLayout
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
 
             <TextView
                 android:id="@+id/tvTituloItem"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:textColor="#333333"
+                android:layout_weight="1"
+                android:text="#1 - Título do Chamado"
+                android:textColor="?android:attr/textColorPrimary"
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
@@ -29,58 +32,57 @@
                 android:id="@+id/tvPrioridadeItem"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:textColor="#D32F2F"
+                android:text="ALTA"
+                android:textColor="#E53935"
                 android:textSize="12sp"
                 android:textStyle="bold" />
-        </RelativeLayout>
+        </LinearLayout>
 
         <TextView
             android:id="@+id/tvLocalItem"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:textColor="#00529B"
-            android:textSize="13sp"
-            android:textStyle="bold" />
+            android:layout_marginTop="4dp"
+            android:text="Local: Lab 02 (Máq. 05)"
+            android:textColor="?android:attr/textColorSecondary"
+            android:textSize="13sp" />
 
         <TextView
             android:id="@+id/tvCategoriaItem"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:textColor="#555555"
-            android:textSize="12sp" />
+            android:text="Categoria: Hardware"
+            android:textColor="?android:attr/textColorSecondary"
+            android:textSize="13sp" />
 
         <TextView
             android:id="@+id/tvDescricaoItem"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:textColor="#666666" />
+            android:text="Descrição do problema..."
+            android:textColor="?android:attr/textColorPrimary"
+            android:textSize="14sp" />
 
         <TextView
             android:id="@+id/tvStatusItem"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textColor="#388E3C"
+            android:layout_marginTop="6dp"
+            android:text="Status: ABERTO"
+            android:textColor="#1E88E5"
             android:textSize="12sp"
             android:textStyle="bold" />
 
-        <!-- Campo adicionado para exibir a resposta/solução do administrador -->
         <TextView
             android:id="@+id/tvDevolutivaItem"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:background="#E8F5E9"
-            android:padding="8dp"
-            android:textColor="#1B5E20"
-            android:textSize="13sp"
-            android:textStyle="italic"
+            android:layout_marginTop="4dp"
+            android:text="Devolutiva: Em andamento"
+            android:textColor="#43A047"
+            android:textSize="12sp"
             android:visibility="gone" />
 
     </LinearLayout>
-
 </com.google.android.material.card.MaterialCardView>

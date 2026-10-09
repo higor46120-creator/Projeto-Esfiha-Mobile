@@ -1,121 +1,158 @@
 package br.com.fiec.helptec
 
-import android.content.Intent
 import android.os.Bundle
-import android.widget.AutoCompleteTextView
-import android.widget.Button
-import android.widget.ImageButton
+import android.util.Log
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.textfield.TextInputEditText
+import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.lifecycle.lifecycleScope
+import br.com.fiec.helptec.data.ApiService
+import br.com.fiec.helptec.databinding.ActivityMainBinding
+import br.com.fiec.helptec.network.RetrofitClient
+import br.com.fiec.helptec.network.TokenManager
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.tasks.Task
+import com.suaempresa.app.network.GoogleLoginRequest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : ComponentActivity() {
 
-    private lateinit var adapter: ChamadoAdapter
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var googleSignInClient: GoogleSignInClient
+    private lateinit var tokenManager: TokenManager
+    private lateinit var apiService: ApiService
+
+    companion object {
+        private const val TAG = "GoogleAuth"
+
+        // IMPORTANTE: Use o WEB CLIENT ID gerado no Google Cloud Console
+        // (O mesmo inserido no application.yml do Spring Boot)
+        private const val WEB_CLIENT_ID = "SEU_WEB_CLIENT_ID_AQUI.apps.googleusercontent.com"
+    }
+
+    private val googleSignInLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        handleSignInResult(task)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Aplica o tema ANTES de inflar a view no super.onCreate
-        TemaUtil.aplicarTemaSalvo(this)
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
 
-        // Mapeamento dos elementos da interface
-        val etTitulo = findViewById<TextInputEditText>(R.id.etTitulo)
-        val etSala = findViewById<TextInputEditText>(R.id.etSala)
-        val etMaquina = findViewById<TextInputEditText>(R.id.etMaquina)
-        val etDescricao = findViewById<TextInputEditText>(R.id.etDescricao)
-        val spCategoria = findViewById<AutoCompleteTextView>(R.id.spCategoria)
-        val spPrioridade = findViewById<AutoCompleteTextView>(R.id.spPrioridade)
-        val btnAbrirChamado = findViewById<Button>(R.id.btnAbrirChamado)
-        val btnSair = findViewById<Button>(R.id.btnSair)
-        val rvChamados = findViewById<RecyclerView>(R.id.rvChamados)
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        // Busca dinâmica que elimina o erro de compilação 'Unresolved reference'
-        val idBtnTema = resources.getIdentifier("btnAlternarTema", "id", packageName)
-        val btnAlternarTema = if (idBtnTema != 0) findViewById<ImageButton>(idBtnTema) else null
+        // 1. Inicializa o gerenciador de token e o cliente Retrofit
+        tokenManager = TokenManager(this)
+        apiService = RetrofitClient.create(tokenManager)
 
-        btnSair.bringToFront()
+        // 2. Configura o Google Sign-In solicitando o ID Token com o Web Client ID
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(WEB_CLIENT_ID) // Habilita a geração do idToken para o backend
+            .requestEmail()
+            .build()
 
-        // Listener seguro do botão de alternar tema + Recriação imediata da Activity
-        btnAlternarTema?.setOnClickListener {
-            TemaUtil.alternarTema(this)
-            recreate() // Força a recriação da tela com o novo tema aplicado
+        googleSignInClient = GoogleSignIn.getClient(this, gso)
+
+        // 3. Listener do botão de login
+        binding.btnLoginGoogle.setOnClickListener {
+            signIn()
         }
 
-        // Listas customizadas com ícones e indicadores de cor
-        val categorias = listOf(
-            OpcaoItem("Hardware", android.R.drawable.ic_menu_compass),
-            OpcaoItem("Software", android.R.drawable.ic_menu_manage),
-            OpcaoItem("Rede", android.R.drawable.ic_menu_share),
-            OpcaoItem("Acessórios", android.R.drawable.ic_menu_add)
-        )
-
-        val prioridades = listOf(
-            OpcaoItem("Baixa", android.R.drawable.presence_online, "#FBC02D"), // Amarelo
-            OpcaoItem("Média", android.R.drawable.presence_away, "#FB8C00"),   // Laranja
-            OpcaoItem("Alta", android.R.drawable.presence_busy, "#E53935")     // Vermelho
-        )
-
-        // Aplicação dos adaptadores customizados
-        spCategoria.setAdapter(CategoriaAdapter(this, categorias))
-        spPrioridade.setAdapter(CategoriaAdapter(this, prioridades))
-
-        // Configuração do RecyclerView
-        adapter = ChamadoAdapter(ChamadoRepository.listaChamados)
-        rvChamados.layoutManager = LinearLayoutManager(this)
-        rvChamados.adapter = adapter
-
-        // Envio do formulário
-        btnAbrirChamado.setOnClickListener {
-            val titulo = etTitulo.text?.toString() ?: ""
-            val sala = etSala.text?.toString() ?: ""
-            val maquina = etMaquina.text?.toString() ?: ""
-            val descricao = etDescricao.text?.toString() ?: ""
-            val categoria = spCategoria.text?.toString() ?: ""
-            val prioridade = spPrioridade.text?.toString() ?: ""
-
-            if (titulo.isNotBlank() && sala.isNotBlank() && maquina.isNotBlank() &&
-                descricao.isNotBlank() && categoria.isNotBlank() && prioridade.isNotBlank()) {
-
-                val novoChamado = Chamado(
-                    id = ChamadoRepository.gerarId(),
-                    titulo = titulo,
-                    sala = sala,
-                    maquina = maquina,
-                    categoria = categoria,
-                    prioridade = prioridade,
-                    descricao = descricao
-                )
-
-                ChamadoRepository.adicionarChamado(novoChamado)
-                adapter.notifyItemInserted(0)
-                rvChamados.scrollToPosition(0)
-
-                etTitulo.text?.clear()
-                etSala.text?.clear()
-                etMaquina.text?.clear()
-                etDescricao.text?.clear()
-                spCategoria.text?.clear()
-                spPrioridade.text?.clear()
-                Toast.makeText(this, "Chamado enviado com sucesso!", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this, "Preencha todos os campos do formulário.", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        // Ação de Logout
-        btnSair.setOnClickListener {
-            val intent = Intent(this, LoginActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
-            finish()
+        // Listener para botão de logout
+        binding.btnSair?.setOnClickListener {
+            signOut()
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        adapter.notifyDataSetChanged()
+    override fun onStart() {
+        super.onStart()
+        // Verifica se já possui um token do servidor armazenado
+        val tokenServidor = tokenManager.getToken()
+        if (!tokenServidor.isNullOrEmpty()) {
+            Log.d(TAG, "Sessão do servidor ativa: $tokenServidor")
+            updateUI("Sessão Ativa", "Sessão já iniciada no backend.")
+        } else {
+            // Tenta recuperar conta salva no Google caso precise reautenticar
+            val account = GoogleSignIn.getLastSignedInAccount(this)
+            account?.idToken?.let { idToken ->
+                enviarIdTokenParaBackend(idToken)
+            }
+        }
+    }
+
+    private fun signIn() {
+        val signInIntent = googleSignInClient.signInIntent
+        googleSignInLauncher.launch(signInIntent)
+    }
+
+    private fun handleSignInResult(completedTask: Task<GoogleSignInAccount>) {
+        try {
+            val account = completedTask.getResult(ApiException::class.java)
+            val idToken = account.idToken
+
+            if (idToken != null) {
+                // Envia o idToken obtido para validação no Spring Boot
+                enviarIdTokenParaBackend(idToken)
+            } else {
+                Toast.makeText(this, "Não foi possível obter o idToken do Google.", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: ApiException) {
+            Log.e(TAG, "Erro no Google Sign-In. Código: ${e.statusCode}", e)
+            Toast.makeText(this, "Falha no Login Google: ${e.statusCode}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    /**
+     * Envia o idToken do Google para o Spring Boot e armazena o token de retorno do servidor.
+     */
+    private fun enviarIdTokenParaBackend(idToken: String) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val response = apiService.authenticateWithGoogle(GoogleLoginRequest(idToken))
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful && response.body() != null) {
+                        val authData = response.body()!!
+
+                        // SUCESSO: Armazena o token do SERVIDOR no TokenManager
+                        tokenManager.saveToken(authData.token)
+
+                        Log.d(TAG, "Token do backend salvo com sucesso!")
+                        Toast.makeText(this@MainActivity, "Autenticado com sucesso no backend!", Toast.LENGTH_SHORT).show()
+
+                        updateUI(authData.name, authData.email)
+                    } else if (response.code() == 404) {
+                        Toast.makeText(this@MainActivity, "Usuário não cadastrado no sistema.", Toast.LENGTH_LONG).show()
+                    } else {
+                        Toast.makeText(this@MainActivity, "Erro na validação do servidor: ${response.code()}", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Log.e(TAG, "Falha ao se comunicar com o backend", e)
+                    Toast.makeText(this@MainActivity, "Erro de rede ao conectar no backend.", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    private fun signOut() {
+        googleSignInClient.signOut().addOnCompleteListener(this) {
+            tokenManager.clearToken() // Limpa o JWT armazenado
+            Toast.makeText(this, "Sessão encerrada com sucesso.", Toast.LENGTH_SHORT).show()
+            updateUI("Deslogado", "")
+        }
+    }
+
+    private fun updateUI(name: String, email: String) {
+        binding.tvTitle.text = "Bem-vindo(a), $name\n$email"
     }
 }

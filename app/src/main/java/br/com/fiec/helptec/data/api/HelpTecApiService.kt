@@ -1,4 +1,5 @@
-package br.com.fiec.helptec.data.api
+package br.com.fiec.helptec.data
 
 interface HelpTecApiService {
+
 }
