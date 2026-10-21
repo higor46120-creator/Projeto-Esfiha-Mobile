@@ -1,5 +1,6 @@
 package br.com.fiec.helptec.data
 
+import br.com.fiec.helptec.data.model.Chamado
 import com.suaempresa.app.network.GoogleLoginRequest
 import retrofit2.Response
 import retrofit2.http.Body

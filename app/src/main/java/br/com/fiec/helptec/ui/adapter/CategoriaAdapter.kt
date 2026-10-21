@@ -1,4 +1,4 @@
-package br.com.fiec.helptec
+package br.com.fiec.helptec.ui.adapter
 
 import android.content.Context
 import android.graphics.Color
@@ -8,6 +8,8 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.ImageView
 import android.widget.TextView
+import br.com.fiec.helptec.data.model.OpcaoItem
+import br.com.fiec.helptec.R
 
 class CategoriaAdapter(
     context: Context,

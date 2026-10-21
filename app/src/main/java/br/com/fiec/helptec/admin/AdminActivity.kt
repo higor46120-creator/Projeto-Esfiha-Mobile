@@ -1,6 +1,6 @@
-package br.com.fiec.helptec
+package br.com.fiec.helptec.admin
 
-import android.content.Context
+import android.R
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -10,7 +10,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import br.com.fiec.helptec.data.Chamado
+import br.com.fiec.helptec.ui.adapter.ChamadoAdapter
+import br.com.fiec.helptec.auth.LoginActivity
+import br.com.fiec.helptec.data.model.Chamado
 import br.com.fiec.helptec.data.RetrofitClient
 import br.com.fiec.helptec.databinding.ActivityAdminBinding
 import kotlinx.coroutines.Dispatchers
@@ -40,7 +42,7 @@ class AdminActivity : AppCompatActivity() {
 
     private fun configurarDropdowns() {
         val statusList = listOf("ABERTO", "EM_ANDAMENTO", "CONCLUIDO", "CANCELADO")
-        val adapterStatus = ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, statusList)
+        val adapterStatus = ArrayAdapter(this, R.layout.simple_dropdown_item_1line, statusList)
         binding.spStatus.setAdapter(adapterStatus)
     }
 
@@ -98,17 +100,29 @@ class AdminActivity : AppCompatActivity() {
                 val response = RetrofitClient.getInstance(applicationContext).criarChamado(chamadoAtualizado)
                 withContext(Dispatchers.Main) {
                     if (response.isSuccessful) {
-                        Toast.makeText(this@AdminActivity, "Chamado atualizado com sucesso!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            this@AdminActivity,
+                            "Chamado atualizado com sucesso!",
+                            Toast.LENGTH_SHORT
+                        ).show()
                         limparCampos()
                         carregarChamados()
                     } else {
-                        Toast.makeText(this@AdminActivity, "Erro ao atualizar: ${response.code()}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            this@AdminActivity,
+                            "Erro ao atualizar: ${response.code()}",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             } catch (e: Exception) {
                 Log.e("AdminActivity", "Erro ao atualizar chamado", e)
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(this@AdminActivity, "Falha de conexão com o servidor", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@AdminActivity,
+                        "Falha de conexão com o servidor",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
@@ -139,7 +153,7 @@ class AdminActivity : AppCompatActivity() {
     }
 
     private fun realizarLogout() {
-        getSharedPreferences("auth_prefs", Context.MODE_PRIVATE).edit().clear().apply()
+        getSharedPreferences("auth_prefs", MODE_PRIVATE).edit().clear().apply()
         Toast.makeText(this, "Sessão encerrada", Toast.LENGTH_SHORT).show()
 
         val intent = Intent(this, LoginActivity::class.java)

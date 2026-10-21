@@ -1,4 +1,4 @@
-package br.com.fiec.helptec.data
+package br.com.fiec.helptec.data.model
 
 data class Chamado(
     val id: Long? = null,
@@ -8,8 +8,6 @@ data class Chamado(
     val categoria: String,
     val prioridade: String,
     val descricao: String,
-    val status: String = "ABERTO",
-    val devolutiva: String? = "",
-    val latitude: Double? = null,
-    val longitude: Double? = null
+    val devolutiva: String,
+    val status: String
 )

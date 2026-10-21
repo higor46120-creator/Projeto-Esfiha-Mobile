@@ -1,11 +1,12 @@
-package br.com.fiec.helptec
+package br.com.fiec.helptec.ui.adapter
 
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import br.com.fiec.helptec.data.Chamado
+import br.com.fiec.helptec.R
+import br.com.fiec.helptec.data.model.Chamado
 
 class ChamadoAdapter(
     private var chamados: List<Chamado> = emptyList(), // Alterado de 'val' para 'var'

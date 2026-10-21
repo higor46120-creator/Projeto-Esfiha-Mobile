@@ -1,4 +1,4 @@
-package br.com.fiec.helptec
+package br.com.fiec.helptec.utils
 
 import android.content.Context
 import androidx.appcompat.app.AppCompatDelegate

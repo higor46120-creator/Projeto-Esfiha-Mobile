@@ -1,6 +1,6 @@
-package br.com.fiec.helptec
+package br.com.fiec.helptec.data.repository
 
-import br.com.fiec.helptec.data.Chamado
+import br.com.fiec.helptec.data.model.Chamado
 
 object ChamadoRepository {
     val listaChamados = mutableListOf<Chamado>()

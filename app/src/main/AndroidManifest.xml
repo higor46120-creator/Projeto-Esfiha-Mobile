@@ -21,19 +21,20 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
 
-        <!-- Valor da apiKey inserido diretamente na meta-data do Google Maps -->
+        <!-- Chave de API do Google Maps -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyCp6C3B7wCMuJlR4ZEpPvSWfIpOFCgriYg" />
 
         <!-- Activity do Google Maps -->
         <activity
-            android:name=".MapsActivity"
+            android:name="br.com.fiec.helptec.maps.MapsActivity"
             android:exported="false"
             android:label="@string/title_activity_maps" />
 
+        <!-- Tela de Login -->
         <activity
-            android:name=".LoginActivity"
+            android:name="br.com.fiec.helptec.auth.LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -41,14 +42,16 @@
             </intent-filter>
         </activity>
 
+        <!-- Tela de Administração -->
         <activity
-            android:name=".MainActivity"
+            android:name="br.com.fiec.helptec.admin.AdminActivity"
             android:exported="false" />
 
         <activity
-            android:name=".AdminActivity"
+            android:name="br.com.fiec.helptec.main.MainActivity"
             android:exported="false" />
 
+        <!-- Serviço do Firebase -->
         <service
             android:name=".MyFirebaseMessagingService"
             android:exported="false">

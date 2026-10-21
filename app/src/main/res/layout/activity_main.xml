@@ -203,13 +203,17 @@
                     </com.google.android.material.textfield.TextInputLayout>
                 </LinearLayout>
 
-                <!-- Descrição -->
+                <!-- Descrição com Botão de Microfone Embutido -->
                 <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/tilDescricao"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:hint="Descrição detalhada do problema">
+                    android:hint="Descrição detalhada do problema"
+                    app:endIconMode="custom"
+                    app:endIconDrawable="@android:drawable/ic_btn_speak_now"
+                    app:endIconContentDescription="Gravar por voz">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/etDescricao"
