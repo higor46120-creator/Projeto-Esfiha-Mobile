@@ -1,13 +1,15 @@
-package br.com.fiec.helptec
+package br.com.fiec.helptec.ui.adapter
 
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import br.com.fiec.helptec.R
+import br.com.fiec.helptec.data.model.Chamado
 
 class ChamadoAdapter(
-    private val chamados: List<Chamado>,
+    private var chamados: List<Chamado> = emptyList(), // Alterado de 'val' para 'var'
     private val onItemClick: ((Chamado, Int) -> Unit)? = null
 ) : RecyclerView.Adapter<ChamadoAdapter.ChamadoViewHolder>() {
 
@@ -21,6 +23,11 @@ class ChamadoAdapter(
         val tvDevolutiva: TextView = view.findViewById(R.id.tvDevolutivaItem)
     }
 
+    fun atualizarLista(novaLista: List<Chamado>) {
+        chamados = novaLista
+        notifyDataSetChanged()
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ChamadoViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_chamado, parent, false)
@@ -29,14 +36,15 @@ class ChamadoAdapter(
 
     override fun onBindViewHolder(holder: ChamadoViewHolder, position: Int) {
         val item = chamados[position]
-        holder.tvTitulo.text = "#${item.id} - ${item.titulo}"
+
+        holder.tvTitulo.text = if (item.id != null) "#${item.id} - ${item.titulo}" else item.titulo
         holder.tvLocal.text = "Local: ${item.sala} (Máq. ${item.maquina})"
         holder.tvCategoria.text = "Categoria: ${item.categoria}"
         holder.tvPrioridade.text = item.prioridade.uppercase()
         holder.tvDescricao.text = item.descricao
         holder.tvStatus.text = "Status: ${item.status}"
 
-        if (item.devolutiva.isNotBlank()) {
+        if (!item.devolutiva.isNullOrBlank()) {
             holder.tvDevolutiva.visibility = View.VISIBLE
             holder.tvDevolutiva.text = "Devolutiva: ${item.devolutiva}"
         } else {

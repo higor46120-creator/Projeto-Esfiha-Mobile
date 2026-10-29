@@ -2,12 +2,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Permissões de Rede e Localização -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <!-- Permissão necessária para notificações no Android 13+ -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
+        android:name=".HelpTecApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -16,10 +21,23 @@
         android:roundIcon="@mipmap/helptec"
         android:supportsRtl="true"
         android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+        android:usesCleartextTraffic="true"
         tools:targetApi="31">
 
+        <!-- Chave de API do Google Maps -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyC4jAC_UJDGbklJaZhTh3gthxZJzdmjkcM" />
+
+        <!-- Activity do Google Maps -->
         <activity
-            android:name=".LoginActivity"
+            android:name="br.com.fiec.helptec.maps.MapsActivity"
+            android:exported="false"
+            android:label="@string/title_activity_maps" />
+
+        <!-- Tela de Login -->
+        <activity
+            android:name="br.com.fiec.helptec.auth.LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -28,25 +46,27 @@
             </intent-filter>
         </activity>
 
+        <!-- Tela de Administração -->
         <activity
-            android:name=".MainActivity"
+            android:name="br.com.fiec.helptec.admin.AdminActivity"
             android:exported="false" />
 
-        <!-- Adicionada a AdminActivity para acesso do perfil de Suporte/Admin -->
         <activity
-            android:name=".AdminActivity"
+            android:name="br.com.fiec.helptec.main.MainActivity"
             android:exported="false" />
 
-        <!-- Serviço responsável por receber mensagens do Firebase -->
+        <!-- Serviço do Firebase -->
         <service
             android:name=".MyFirebaseMessagingService"
             android:exported="false">
-
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
-
         </service>
+
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="@string/default_notification_channel_id" />
 
     </application>
 

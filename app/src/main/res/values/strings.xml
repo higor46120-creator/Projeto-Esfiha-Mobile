@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Helptec</string>
+
+    <!-- Canal Padrão do Firebase Cloud Messaging -->
+    <string name="default_notification_channel_id">helptec_notifications</string>
+    <string name="title_activity_maps">MapsActivity</string>
 </resources>

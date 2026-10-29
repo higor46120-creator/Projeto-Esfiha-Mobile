@@ -1,4 +1,4 @@
-package br.com.fiec.helptec
+package br.com.fiec.helptec.data.model
 
 data class OpcaoItem(
     val texto: String,
