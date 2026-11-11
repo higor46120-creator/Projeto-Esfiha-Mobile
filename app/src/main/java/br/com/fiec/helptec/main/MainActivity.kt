@@ -3,7 +3,10 @@ package br.com.fiec.helptec.main
 import android.content.Intent
 import android.os.Bundle
 import android.speech.RecognizerIntent
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
@@ -19,7 +22,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import br.com.fiec.helptec.R
+import br.com.fiec.helptec.admin.AdminActivity
+import br.com.fiec.helptec.auth.Perfis
+import br.com.fiec.helptec.auth.LoginActivity
 import br.com.fiec.helptec.data.ApiService
+import br.com.fiec.helptec.data.EquipamentoDTO
+import br.com.fiec.helptec.data.NovoChamadoRequest
+import br.com.fiec.helptec.data.SalaDTO
 import br.com.fiec.helptec.data.model.Chamado
 import br.com.fiec.helptec.maps.MapsActivity
 import br.com.fiec.helptec.network.RetrofitClient
@@ -39,8 +48,12 @@ class MainActivity : ComponentActivity() {
 
     // Declaração dos elementos da interface
     private var etTitulo: TextInputEditText? = null
-    private var etSala: TextInputEditText? = null
-    private var etMaquina: TextInputEditText? = null
+    private var etSala: AutoCompleteTextView? = null
+    private var etMaquina: AutoCompleteTextView? = null
+
+    // Itens escolhidos nos dropdowns (vindos da API)
+    private var salaSelecionada: SalaDTO? = null
+    private var equipamentoSelecionado: EquipamentoDTO? = null
     private var etDescricao: TextInputEditText? = null
     private var tilDescricao: TextInputLayout? = null
     private var spPrioridade: AutoCompleteTextView? = null
@@ -48,6 +61,7 @@ class MainActivity : ComponentActivity() {
     private var btnAbrirChamado: MaterialButton? = null
     private var btnAbrirMapa: MaterialButton? = null
     private var btnSair: MaterialButton? = null
+    private var btnGestao: MaterialButton? = null
 
     // ViewModel para gerenciar o estado da descrição do chamado
     private val viewModel: MainViewModel by viewModels()
@@ -66,7 +80,7 @@ class MainActivity : ComponentActivity() {
                 result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
             val recognizedText = spokenTextResults?.get(0) ?: ""
 
-            viewModel.updateDescricao(recognizedText)
+            viewModel.acrescentarDescricao(recognizedText)
         }
     }
 
@@ -77,7 +91,7 @@ class MainActivity : ComponentActivity() {
         // Inicializa as Views pelo ID
         inicializarViews()
 
-        // Inicializa serviços de rede
+        // Inicializa serviços de rede (o token é lido pelo interceptor a cada requisição)
         tokenManager = TokenManager(this)
         apiService = RetrofitClient.create(tokenManager)
 
@@ -85,6 +99,88 @@ class MainActivity : ComponentActivity() {
         setupDropdowns()
         setupListeners()
         setupObservers()
+        carregarSalasEEquipamentos()
+        mostrarBotaoGestaoSePermitido()
+    }
+
+    /** Aprovador, suporte, gerente e admin veem o botão "Gestão" no cabeçalho. */
+    private fun mostrarBotaoGestaoSePermitido() {
+        lifecycleScope.launch {
+            val role = try {
+                val resp = withContext(Dispatchers.IO) { apiService.me() }
+                if (resp.isSuccessful) {
+                    Log.d("HelpTecPerfil", "GET /usuarios/me -> ${resp.code()} papel=${resp.body()?.role}")
+                    resp.body()?.role
+                } else {
+                    val erro = withContext(Dispatchers.IO) { resp.errorBody()?.string() }
+                    Log.e("HelpTecPerfil", "GET /usuarios/me falhou: HTTP ${resp.code()} $erro")
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Não foi possível verificar seu perfil (HTTP ${resp.code()})",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    null
+                }
+            } catch (e: Exception) {
+                Log.e("HelpTecPerfil", "GET /usuarios/me: erro de rede/JSON", e)
+                null
+            }
+            btnGestao?.visibility = if (Perfis.podeAcessarGestao(role)) View.VISIBLE else View.GONE
+        }
+    }
+
+    /** Busca salas e equipamentos cadastrados no backend para os dropdowns. */
+    private fun carregarSalasEEquipamentos() {
+        lifecycleScope.launch {
+            try {
+                val respSalas = withContext(Dispatchers.IO) { apiService.listarSalas() }
+                val respEquip = withContext(Dispatchers.IO) { apiService.listarEquipamentos() }
+
+                if (respSalas.code() == 401 || respEquip.code() == 401) {
+                    sessaoExpirada()
+                    return@launch
+                }
+
+                val salas = respSalas.body()?.itens.orEmpty()
+                val equipamentos = respEquip.body()?.itens.orEmpty()
+
+                etSala?.setAdapter(
+                    ArrayAdapter(this@MainActivity, android.R.layout.simple_dropdown_item_1line, salas)
+                )
+                etSala?.setOnItemClickListener { parent, _, position, _ ->
+                    salaSelecionada = parent.getItemAtPosition(position) as SalaDTO
+                }
+
+                etMaquina?.setAdapter(
+                    ArrayAdapter(this@MainActivity, android.R.layout.simple_dropdown_item_1line, equipamentos)
+                )
+                etMaquina?.setOnItemClickListener { parent, _, position, _ ->
+                    equipamentoSelecionado = parent.getItemAtPosition(position) as EquipamentoDTO
+                }
+
+                if (salas.isEmpty() || equipamentos.isEmpty()) {
+                    Toast.makeText(
+                        this@MainActivity,
+                        "Nenhuma sala ou equipamento cadastrado no sistema",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Erro ao carregar salas/equipamentos", e)
+                Toast.makeText(
+                    this@MainActivity,
+                    "Não foi possível carregar salas e equipamentos",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
+    private fun sessaoExpirada() {
+        Toast.makeText(this, "Sessão expirada. Faça login novamente.", Toast.LENGTH_LONG).show()
+        tokenManager.clearToken()
+        startActivity(Intent(this, LoginActivity::class.java))
+        finish()
     }
 
     private fun inicializarViews() {
@@ -98,6 +194,7 @@ class MainActivity : ComponentActivity() {
         btnAbrirChamado = findViewById(R.id.btnAbrirChamado)
         btnAbrirMapa = findViewById(R.id.btnAbrirMapa)
         btnSair = findViewById(R.id.btnSair)
+        btnGestao = findViewById(R.id.btnGestao)
     }
 
     private fun setupDropdowns() {
@@ -111,7 +208,6 @@ class MainActivity : ComponentActivity() {
         spPrioridade?.setAdapter(adapterPrioridade)
 
         // --- 2. CATEGORIAS (com ícone) ---
-        // Troque os ícones pelos seus drawables (ex.: R.drawable.ic_hardware)
         val categorias = listOf(
             CategoriaItem("Hardware", android.R.drawable.ic_menu_manage),
             CategoriaItem("Software", android.R.drawable.ic_menu_edit),
@@ -121,7 +217,6 @@ class MainActivity : ComponentActivity() {
         val adapterCategoria = CategoriaAdapter(categorias)
         spCategoria?.setAdapter(adapterCategoria)
         spCategoria?.setOnItemClickListener { _, _, position, _ ->
-            // Mantém apenas o nome no campo (o adapter já faz isso via toString do item)
             spCategoria?.setText(categorias[position].nome, false)
         }
     }
@@ -130,19 +225,23 @@ class MainActivity : ComponentActivity() {
         // Ícone de microfone no campo de descrição
         tilDescricao?.setEndIconOnClickListener { iniciarReconhecimentoDeVoz() }
 
-        // Mantém o ViewModel sincronizado quando o usuário digita
-        etDescricao?.addTextChangedListener(object : android.text.TextWatcher {
+        // Sincroniza ViewModel ao digitar
+        etDescricao?.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: android.text.Editable?) {
+            override fun afterTextChanged(s: Editable?) {
                 val texto = s?.toString().orEmpty()
                 if (texto != viewModel.descricao.value) {
-                    viewModel.updateDescricao(texto)
+                    viewModel.setDescricao(texto)
                 }
             }
         })
 
         btnAbrirChamado?.setOnClickListener { abrirChamado() }
+
+        btnGestao?.setOnClickListener {
+            startActivity(Intent(this, AdminActivity::class.java))
+        }
 
         btnAbrirMapa?.setOnClickListener {
             startActivity(Intent(this, MapsActivity::class.java))
@@ -150,6 +249,7 @@ class MainActivity : ComponentActivity() {
 
         btnSair?.setOnClickListener {
             tokenManager.clearToken()
+            startActivity(Intent(this, LoginActivity::class.java))
             finish()
         }
     }
@@ -190,55 +290,66 @@ class MainActivity : ComponentActivity() {
 
     private fun abrirChamado() {
         val titulo = etTitulo?.text?.toString()?.trim().orEmpty()
-        val sala = etSala?.text?.toString()?.trim().orEmpty()
-        val maquina = etMaquina?.text?.toString()?.trim().orEmpty()
-        val descricao = etDescricao?.text?.toString()?.trim().orEmpty()
-        val prioridade = spPrioridade?.text?.toString()?.trim().orEmpty()
+        val descricaoInput = etDescricao?.text?.toString()?.trim().orEmpty()
+        val prioridadeInput = spPrioridade?.text?.toString()?.trim().orEmpty().uppercase()
         val categoria = spCategoria?.text?.toString()?.trim().orEmpty()
+        val idSala = salaSelecionada?.idSala
+        val idEquipamento = equipamentoSelecionado?.id
 
-        // Validação
-        if (titulo.isEmpty() || sala.isEmpty() || maquina.isEmpty() ||
-            descricao.isEmpty() || prioridade.isEmpty() || categoria.isEmpty()
-        ) {
+        // Validação básica dos campos da UI
+        if (titulo.isEmpty() || descricaoInput.isEmpty() || prioridadeInput.isEmpty() || categoria.isEmpty()) {
             Toast.makeText(this, "Preencha todos os campos", Toast.LENGTH_SHORT).show()
             return
         }
+        if (idSala == null || idEquipamento == null) {
+            Toast.makeText(this, "Escolha a sala e a máquina na lista", Toast.LENGTH_SHORT).show()
+            return
+        }
 
-        // AJUSTE aqui conforme o construtor real da sua classe Chamado
-        val chamado = Chamado(
-            titulo = titulo,
-            sala = sala,
-            maquina = maquina,
-            descricao = descricao,
-            prioridade = prioridade,
-            categoria = categoria,
-            devolutiva = "",
-            status = "Aberto"
+        // Normaliza prioridade para o backend (ALTA, MEDIA, BAIXA)
+        val prioridadeFormatada = when {
+            prioridadeInput.contains("ALT") -> "ALTA"
+            prioridadeInput.contains("MÉD") || prioridadeInput.contains("MED") -> "MEDIA"
+            else -> "BAIXA"
+        }
+
+        // O solicitante não vai no corpo: o backend identifica pelo JWT
+        val request = NovoChamadoRequest(
+            descricao = Chamado.montarDescricao(categoria, titulo, descricaoInput),
+            prioridade = prioridadeFormatada,
+            criticidade = prioridadeFormatada,
+            idSala = idSala,
+            idEquipamento = idEquipamento
         )
 
         btnAbrirChamado?.isEnabled = false
 
         lifecycleScope.launch {
             try {
-                // AJUSTE o nome do método conforme o seu ApiService
                 val response = withContext(Dispatchers.IO) {
-                    apiService.criarChamado(chamado)
+                    apiService.criarChamado(request)
                 }
 
-                if (response.isSuccessful) {
-                    Toast.makeText(
-                        this@MainActivity,
-                        "Chamado aberto com sucesso!",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    limparCampos()
-                } else {
-                    Log.e("MainActivity", "Erro ${response.code()}: ${response.message()}")
-                    Toast.makeText(
-                        this@MainActivity,
-                        "Erro ao abrir chamado (${response.code()})",
-                        Toast.LENGTH_LONG
-                    ).show()
+                when {
+                    response.isSuccessful -> {
+                        val numero = response.body()?.idChamado
+                        Toast.makeText(
+                            this@MainActivity,
+                            if (numero != null) "Chamado #$numero aberto com sucesso!" else "Chamado aberto com sucesso!",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        limparCampos()
+                    }
+                    response.code() == 401 -> sessaoExpirada()
+                    else -> {
+                        val errorMsg = response.errorBody()?.string()
+                        Log.e("MainActivity", "Erro ${response.code()}: $errorMsg")
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Erro ao abrir chamado (${response.code()})",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("MainActivity", "Falha de rede", e)
@@ -255,15 +366,17 @@ class MainActivity : ComponentActivity() {
 
     private fun limparCampos() {
         etTitulo?.text?.clear()
-        etSala?.text?.clear()
-        etMaquina?.text?.clear()
-        viewModel.updateDescricao("")
+        etSala?.setText("", false)
+        etMaquina?.setText("", false)
+        salaSelecionada = null
+        equipamentoSelecionado = null
+        viewModel.setDescricao("")
         spPrioridade?.setText("", false)
         spCategoria?.setText("", false)
     }
 
     /**
-     * Adapter com ícone + nome, criado por código (não precisa de layout XML extra).
+     * Adapter customizado interno para ícone + nome sem layout XML externo
      */
     private inner class CategoriaAdapter(
         private val itens: List<CategoriaItem>
@@ -280,28 +393,36 @@ class MainActivity : ComponentActivity() {
 
         private fun criarLinha(position: Int): View {
             val item = itens[position]
-            val dp = context.resources.displayMetrics.density
+            val scale = context.resources.displayMetrics.density
 
             val icone = ImageView(context).apply {
                 setImageResource(item.iconeResId)
-                layoutParams = LinearLayout.LayoutParams((24 * dp).toInt(), (24 * dp).toInt())
+                layoutParams = LinearLayout.LayoutParams(
+                    (24 * scale).toInt(),
+                    (24 * scale).toInt()
+                )
             }
+
             val texto = TextView(context).apply {
                 text = item.nome
                 textSize = 16f
-                setPadding((12 * dp).toInt(), 0, 0, 0)
+                setPadding((12 * scale).toInt(), 0, 0, 0)
             }
 
             return LinearLayout(context).apply {
                 orientation = LinearLayout.HORIZONTAL
-                gravity = android.view.Gravity.CENTER_VERTICAL
-                setPadding((16 * dp).toInt(), (12 * dp).toInt(), (16 * dp).toInt(), (12 * dp).toInt())
+                gravity = Gravity.CENTER_VERTICAL
+                setPadding(
+                    (16 * scale).toInt(),
+                    (12 * scale).toInt(),
+                    (16 * scale).toInt(),
+                    (12 * scale).toInt()
+                )
                 addView(icone)
                 addView(texto)
             }
         }
 
-        // O AutoCompleteTextView usa o toString() para preencher o campo e filtrar
         override fun getItem(position: Int): CategoriaItem = itens[position]
     }
 }

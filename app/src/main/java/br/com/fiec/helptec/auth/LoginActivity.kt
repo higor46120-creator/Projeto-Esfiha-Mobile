@@ -13,8 +13,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import br.com.fiec.helptec.R
+import br.com.fiec.helptec.admin.AdminActivity
+import br.com.fiec.helptec.data.RetrofitClient
 import br.com.fiec.helptec.data.repository.HelpTecRepository
 import br.com.fiec.helptec.main.MainActivity
+import br.com.fiec.helptec.network.TokenManager
 import br.com.fiec.helptec.utils.TemaUtil
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
@@ -23,12 +26,15 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.SignInButton
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.tasks.Task
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var googleSignInClient: GoogleSignInClient
-    private val repository = HelpTecRepository()
+    private lateinit var tokenManager: TokenManager
+    private val repository by lazy { HelpTecRepository(applicationContext) }
 
     private val googleSignInLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -40,6 +46,8 @@ class LoginActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
+
+        tokenManager = TokenManager(this)
 
         val btnAlternarTema = findViewById<ImageButton>(R.id.btnAlternarTema)
         btnAlternarTema?.setOnClickListener {
@@ -93,8 +101,15 @@ class LoginActivity : AppCompatActivity() {
             btnLogin.isEnabled = true
 
             if (result.isSuccess) {
-                Toast.makeText(this@LoginActivity, "Login realizado com sucesso!", Toast.LENGTH_SHORT).show()
-                irParaMain()
+                val token = result.getOrNull()
+
+                if (!token.isNullOrEmpty()) {
+                    tokenManager.saveToken(token)
+                    Toast.makeText(this@LoginActivity, "Login realizado com sucesso!", Toast.LENGTH_SHORT).show()
+                    irParaMain()
+                } else {
+                    Toast.makeText(this@LoginActivity, "Erro: Token JWT não retornado pelo servidor", Toast.LENGTH_LONG).show()
+                }
             } else {
                 val error = result.exceptionOrNull()
                 Toast.makeText(this@LoginActivity, "Erro: ${error?.message}", Toast.LENGTH_LONG).show()
@@ -110,9 +125,15 @@ class LoginActivity : AppCompatActivity() {
     private fun handleSignInResult(completedTask: Task<GoogleSignInAccount>) {
         try {
             val account = completedTask.getResult(ApiException::class.java)
-            val displayName = account.displayName
-            Toast.makeText(this, "Bem-vindo, $displayName!", Toast.LENGTH_SHORT).show()
-            irParaMain()
+            val googleIdToken = account.idToken
+
+            if (googleIdToken.isNullOrEmpty()) {
+                Toast.makeText(this, "Não foi possível obter o ID Token do Google", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            autenticarGoogleNoBackend(googleIdToken, account.displayName ?: "Usuário")
+
         } catch (e: ApiException) {
             Log.e("HelpTecLogin", "Erro no login Google. Código: ${e.statusCode}")
             Toast.makeText(this, "Erro ao autenticar via Google. Código: ${e.statusCode}", Toast.LENGTH_SHORT).show()
@@ -122,9 +143,63 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
+    private fun autenticarGoogleNoBackend(googleIdToken: String, displayName: String) {
+        val progressBar = findViewById<ProgressBar>(R.id.progressBar)
+        progressBar?.visibility = View.VISIBLE
+
+        lifecycleScope.launch {
+            val result = repository.loginComGoogle(googleIdToken)
+            progressBar?.visibility = View.GONE
+
+            if (result.isSuccess) {
+                val appJwtToken = result.getOrNull()
+
+                if (!appJwtToken.isNullOrEmpty()) {
+                    tokenManager.saveToken(appJwtToken)
+                    Toast.makeText(this@LoginActivity, "Bem-vindo, $displayName!", Toast.LENGTH_SHORT).show()
+                    irParaMain()
+                } else {
+                    Toast.makeText(this@LoginActivity, "Erro: Servidor não retornou um Token JWT válido.", Toast.LENGTH_LONG).show()
+                }
+            } else {
+                val error = result.exceptionOrNull()
+                Log.e("HelpTecLogin", "Erro de autenticação no backend com token do Google", error)
+                Toast.makeText(this@LoginActivity, "Falha ao autenticar no servidor: ${error?.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    /**
+     * Depois do login, pergunta ao backend quem é o usuário (GET /usuarios/me)
+     * e abre a tela certa: gestão de chamados para ADMIN/SUPORTE/GERENTE
+     * (regra em [Perfis]), abertura de chamado para os demais.
+     */
     private fun irParaMain() {
-        val intent = Intent(this, MainActivity::class.java)
-        startActivity(intent)
-        finish()
+        lifecycleScope.launch {
+            val role = try {
+                val resp = withContext(Dispatchers.IO) {
+                    RetrofitClient.getInstance(applicationContext).me()
+                }
+                if (!resp.isSuccessful) {
+                    val erro = withContext(Dispatchers.IO) { resp.errorBody()?.string() }
+                    Log.e("HelpTecPerfil", "GET /usuarios/me falhou: HTTP ${resp.code()} $erro")
+                }
+                resp.body()?.role
+            } catch (e: Exception) {
+                Log.w("HelpTecLogin", "Não foi possível consultar o perfil; abrindo tela padrão", e)
+                null
+            }
+
+            Log.d("HelpTecLogin", "Papel do usuário logado: $role")
+
+            val destino = if (Perfis.iniciaNaGestao(role)) {
+                AdminActivity::class.java
+            } else {
+                MainActivity::class.java
+            }
+
+            startActivity(Intent(this@LoginActivity, destino))
+            finish()
+        }
     }
 }

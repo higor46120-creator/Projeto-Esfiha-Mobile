@@ -1,4 +1,5 @@
 package br.com.fiec.helptec.main
+
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -9,12 +10,15 @@ class MainViewModel : ViewModel() {
     private val _descricao = MutableStateFlow("")
     val descricao: StateFlow<String> = _descricao.asStateFlow()
 
-    fun updateDescricao(novoTexto: String) {
-        val textoAtual = _descricao.value
-        _descricao.value = if (textoAtual.isBlank()) {
-            novoTexto
-        } else {
-            "$textoAtual $novoTexto"
-        }
+    /** Digitação: SUBSTITUI o texto pelo conteúdo atual do campo. */
+    fun setDescricao(texto: String) {
+        _descricao.value = texto
+    }
+
+    /** Reconhecimento de voz: ACRESCENTA o trecho falado ao que já foi escrito. */
+    fun acrescentarDescricao(trecho: String) {
+        if (trecho.isBlank()) return
+        val atual = _descricao.value
+        _descricao.value = if (atual.isBlank()) trecho else "$atual $trecho"
     }
 }

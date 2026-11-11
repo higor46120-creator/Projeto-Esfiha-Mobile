@@ -4,7 +4,6 @@
 
     <!-- Permissões de Rede e Localização -->
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
@@ -20,7 +19,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/helptec"
         android:supportsRtl="true"
-        android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+        android:theme="@style/Theme.Helptec"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
 
@@ -49,6 +48,11 @@
         <!-- Tela de Administração -->
         <activity
             android:name="br.com.fiec.helptec.admin.AdminActivity"
+            android:exported="false" />
+
+        <!-- Tela de atualização de um chamado (aberta pela gestão) -->
+        <activity
+            android:name="br.com.fiec.helptec.admin.AtualizarChamadoActivity"
             android:exported="false" />
 
         <activity

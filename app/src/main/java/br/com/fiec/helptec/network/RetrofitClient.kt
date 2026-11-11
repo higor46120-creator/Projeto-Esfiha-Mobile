@@ -9,20 +9,37 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    private const val BASE_URL = "http://10.0.2.2:8080/" // IP padrao do emulador Android
+    // Endereço do backend: altere em network/ApiConfig.kt
+    private const val BASE_URL = ApiConfig.BASE_URL
 
     fun create(tokenManager: TokenManager): ApiService {
-        // Log das requisições no Logcat
-        val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+        // Autenticação: lê o token salvo no login a CADA requisição,
+        // então sempre usa o JWT mais recente (e nada fica fixo no código).
+        val authInterceptor = okhttp3.Interceptor { chain ->
+            val builder = chain.request().newBuilder()
+                .header("Accept", "application/json")
+
+            val token = tokenManager.getToken()
+            // Não envia token nas rotas de login/cadastro: um JWT antigo/expirado
+            // ali faria o backend recusar o próprio login.
+            val rotaDeLogin = chain.request().url.encodedPath.contains("/api/v1/auth/")
+            if (!token.isNullOrEmpty() && !rotaDeLogin) {
+                builder.header("Authorization", "Bearer $token")
+            }
+
+            chain.proceed(builder.build())
         }
 
-        // Interceptor que anexa o token Bearer
-        val authInterceptor = AuthInterceptor(tokenManager)
+        // Log detalhado no Logcat. Fica DEPOIS do authInterceptor para mostrar
+        // o header enviado; o valor do Authorization é ocultado no log.
+        val loggingInterceptor = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.HEADERS // BODY expõe o ID token do Google no Logcat
+            redactHeader("Authorization")
+        }
 
         val okHttpClient = OkHttpClient.Builder()
-            .addInterceptor(loggingInterceptor) // Depuração HTTP
-            .addInterceptor(authInterceptor)    // Injeção do JWT
+            .addInterceptor(authInterceptor)
+            .addInterceptor(loggingInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .build()
