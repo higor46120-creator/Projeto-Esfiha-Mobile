@@ -1,5 +1,154 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.Helptec" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Tema do app: claro/escuro automático (values-night) com a identidade do front-end -->
+    <style name="Theme.Helptec" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/ht_accent</item>
+        <item name="colorPrimaryVariant">@color/ht_purple</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/ht_blue</item>
+        <item name="colorSecondaryVariant">@color/ht_blue</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSurface">@color/ht_surface</item>
+        <item name="colorOnSurface">@color/ht_text</item>
+        <item name="colorError">@color/ht_danger</item>
+        <item name="android:colorBackground">@color/ht_bg</item>
+        <item name="android:windowBackground">@color/ht_bg</item>
+        <item name="android:textColorPrimary">@color/ht_text</item>
+        <item name="android:textColorSecondary">@color/ht_text_muted</item>
+        <item name="android:statusBarColor">@color/ht_bg</item>
+        <item name="android:navigationBarColor">@color/ht_bg</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="colorControlActivated">@color/ht_accent</item>
+        <item name="textInputStyle">@style/Widget.Helptec.TextInput</item>
+    </style>
+
+    <!-- ===== Campos (rounded-xl, borda cinza, roxa no foco) ===== -->
+    <style name="Widget.Helptec.TextInput" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxCornerRadiusTopStart">12dp</item>
+        <item name="boxCornerRadiusTopEnd">12dp</item>
+        <item name="boxCornerRadiusBottomStart">12dp</item>
+        <item name="boxCornerRadiusBottomEnd">12dp</item>
+        <item name="boxStrokeColor">@color/ht_input_stroke</item>
+        <item name="boxStrokeWidthFocused">2dp</item>
+        <item name="boxBackgroundColor">@color/ht_input</item>
+        <item name="hintTextColor">@color/ht_accent</item>
+        <item name="android:textColorHint">@color/ht_text_muted</item>
+        <item name="endIconTint">@color/ht_text_muted</item>
+    </style>
+
+    <style name="Widget.Helptec.TextInput.Dropdown" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+        <item name="boxCornerRadiusTopStart">12dp</item>
+        <item name="boxCornerRadiusTopEnd">12dp</item>
+        <item name="boxCornerRadiusBottomStart">12dp</item>
+        <item name="boxCornerRadiusBottomEnd">12dp</item>
+        <item name="boxStrokeColor">@color/ht_input_stroke</item>
+        <item name="boxStrokeWidthFocused">2dp</item>
+        <item name="boxBackgroundColor">@color/ht_input</item>
+        <item name="hintTextColor">@color/ht_accent</item>
+        <item name="android:textColorHint">@color/ht_text_muted</item>
+        <item name="endIconTint">@color/ht_text_muted</item>
+    </style>
+
+    <!-- Texto digitado dentro dos campos -->
+    <style name="Widget.Helptec.EditText" parent="">
+        <item name="android:textColor">@color/ht_text</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <!-- ===== Botões ===== -->
+    <!-- Principal: gradiente roxo -> azul -> vermelho, como o "Abrir chamado" do web -->
+    <style name="Widget.Helptec.Button.Gradient" parent="Widget.MaterialComponents.Button">
+        <item name="backgroundTint">@null</item>
+        <item name="android:background">@drawable/bg_button_gradient</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:minHeight">54dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="iconTint">@color/white</item>
+        <item name="iconGravity">textStart</item>
+    </style>
+
+    <!-- Secundário: contorno roxo -->
+    <style name="Widget.Helptec.Button.Outlined" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="cornerRadius">12dp</item>
+        <item name="strokeColor">@color/ht_accent</item>
+        <item name="strokeWidth">1.5dp</item>
+        <item name="android:textColor">@color/ht_accent</item>
+        <item name="iconTint">@color/ht_accent</item>
+        <item name="iconGravity">textStart</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:minHeight">52dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+    </style>
+
+    <!-- Sair / ações discretas -->
+    <style name="Widget.Helptec.Button.Text" parent="Widget.MaterialComponents.Button.TextButton">
+        <item name="android:textColor">@color/ht_danger</item>
+        <item name="iconTint">@color/ht_danger</item>
+        <item name="iconGravity">textStart</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">15sp</item>
+    </style>
+
+    <!-- Botão em cima do cabeçalho com gradiente (fundo translúcido branco) -->
+    <style name="Widget.Helptec.Button.OnGradient" parent="Widget.MaterialComponents.Button.UnelevatedButton">
+        <item name="backgroundTint">#33FFFFFF</item>
+        <item name="cornerRadius">12dp</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="iconTint">@color/white</item>
+        <item name="iconPadding">6dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:minHeight">40dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingEnd">12dp</item>
+    </style>
+
+    <!-- ===== Chips de filtro (como os botões de filtro do web) ===== -->
+    <style name="Widget.Helptec.Chip" parent="Widget.MaterialComponents.Chip.Choice">
+        <item name="chipBackgroundColor">@color/ht_chip_bg</item>
+        <item name="chipStrokeColor">@color/ht_chip_stroke</item>
+        <item name="chipStrokeWidth">1dp</item>
+        <item name="android:textColor">@color/ht_chip_text</item>
+        <item name="android:textSize">13sp</item>
+        <item name="chipCornerRadius">999dp</item>
+        <item name="chipMinHeight">36dp</item>
+        <item name="checkedIconVisible">false</item>
+    </style>
+
+    <!-- ===== Cards (rounded-2xl, borda fina) ===== -->
+    <style name="Widget.Helptec.Card" parent="Widget.MaterialComponents.CardView">
+        <item name="cardCornerRadius">16dp</item>
+        <item name="cardElevation">0dp</item>
+        <item name="cardBackgroundColor">@color/ht_surface</item>
+        <item name="strokeColor">@color/ht_border</item>
+        <item name="strokeWidth">1dp</item>
+    </style>
+
+    <!-- ===== Textos ===== -->
+    <style name="TextAppearance.Helptec.SectionTitle" parent="">
+        <item name="android:textColor">@color/ht_text</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.06</item>
+    </style>
+
+    <style name="Widget.Helptec.Badge" parent="">
+        <item name="android:textSize">11sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:paddingStart">10dp</item>
+        <item name="android:paddingEnd">10dp</item>
+        <item name="android:paddingTop">3dp</item>
+        <item name="android:paddingBottom">3dp</item>
+        <item name="android:background">@drawable/bg_badge</item>
+    </style>
 </resources>
