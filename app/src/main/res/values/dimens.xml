@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Medidas responsivas. Versões: values-land (celular deitado),
+     values-sw600dp (tablet) e values-sw840dp (tablet grande). -->
+<resources>
+    <!-- Margem interna das telas -->
+    <dimen name="ht_tela_padding_h">16dp</dimen>
+    <dimen name="ht_tela_padding_v">16dp</dimen>
+
+    <!-- Espaço entre as duas colunas dos layouts em paisagem -->
+    <dimen name="ht_espaco_colunas">16dp</dimen>
+
+    <!-- Largura do painel de filtros da gestão em paisagem -->
+    <dimen name="ht_painel_lateral">340dp</dimen>
+
+    <!-- Espaço lateral de cada cartão da lista (usado na grade de 2 colunas) -->
+    <dimen name="ht_item_margem_h">0dp</dimen>
+
+    <!-- Colunas da lista de chamados -->
+    <integer name="ht_colunas_lista">1</integer>
+</resources>

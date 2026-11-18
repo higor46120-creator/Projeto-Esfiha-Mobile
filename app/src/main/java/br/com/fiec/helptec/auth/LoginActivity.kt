@@ -71,7 +71,7 @@ class LoginActivity : AppCompatActivity() {
             executarLoginApi(email, senha, btnLogin, progressBar)
         }
 
-        val webClientId = "801876311719-o76pql4jcc9uc5m58qtvp7m7dvq8g6ap.apps.googleusercontent.com"
+        val webClientId = "766257049899-aot666ceg3076370g72t3tsfemha06gb.apps.googleusercontent.com"
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(webClientId)
             .requestEmail()

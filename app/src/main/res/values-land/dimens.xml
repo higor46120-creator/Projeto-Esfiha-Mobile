@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Celular deitado: pouca altura, então menos margem vertical -->
+<resources>
+    <dimen name="ht_tela_padding_h">24dp</dimen>
+    <dimen name="ht_tela_padding_v">12dp</dimen>
+</resources>

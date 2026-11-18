@@ -24,8 +24,28 @@ data class Chamado(
         // e separa de volta na hora de exibir.
         private val CABECALHO = Regex("""^\[(.+?)]\s*(.*)$""")
 
-        fun montarDescricao(categoria: String, titulo: String, descricao: String): String =
-            "[$categoria] $titulo\n$descricao"
+        // Versão antiga: sala/máquina digitadas iam no fim da descrição. Hoje vão nos campos
+        // salaInformada/equipamentoInformado; a leitura abaixo continua para chamados antigos.
+        // Formato antigo, em linhas no fim da descrição:
+        //   "Sala informada: Lab 7"
+        //   "Máquina informada: PC do professor"
+        private const val SALA_INFORMADA = "Sala informada: "
+        private const val MAQUINA_INFORMADA = "Máquina informada: "
+
+        fun montarDescricao(
+            categoria: String,
+            titulo: String,
+            descricao: String,
+            salaInformada: String? = null,
+            maquinaInformada: String? = null
+        ): String {
+            val extras = listOfNotNull(
+                salaInformada?.takeIf { it.isNotBlank() }?.let { SALA_INFORMADA + it },
+                maquinaInformada?.takeIf { it.isNotBlank() }?.let { MAQUINA_INFORMADA + it }
+            )
+            val base = "[$categoria] $titulo\n$descricao"
+            return if (extras.isEmpty()) base else base + "\n\n" + extras.joinToString("\n")
+        }
 
         fun fromDto(
             dto: ChamadoDTO,
@@ -40,13 +60,27 @@ data class Chamado(
             val categoria = match?.groupValues?.get(1).orEmpty()
             val titulo = match?.groupValues?.get(2)?.ifBlank { null }
                 ?: primeiraLinha.take(60)
-            val descricao = if (match != null) resto else textoCompleto
+            val descricaoBruta = if (match != null) resto else textoCompleto
+
+            // Separa as linhas de sala/máquina digitadas do texto do problema
+            val linhas = descricaoBruta.lines()
+            val salaInformada = linhas.firstOrNull { it.startsWith(SALA_INFORMADA) }
+                ?.removePrefix(SALA_INFORMADA)?.trim()
+            val maquinaInformada = linhas.firstOrNull { it.startsWith(MAQUINA_INFORMADA) }
+                ?.removePrefix(MAQUINA_INFORMADA)?.trim()
+            val descricao = linhas
+                .filterNot { it.startsWith(SALA_INFORMADA) || it.startsWith(MAQUINA_INFORMADA) }
+                .joinToString("\n")
+                .trimEnd()
 
             return Chamado(
                 id = dto.idChamado,
                 titulo = titulo,
-                sala = dto.idSala?.let { nomesSalas[it] ?: "Sala #$it" }.orEmpty(),
-                maquina = dto.idEquipamento?.let { nomesEquipamentos[it] ?: "#$it" }.orEmpty(),
+                // Cadastro > campo do backend > linha antiga na descrição (chamados mais velhos)
+                sala = dto.idSala?.let { nomesSalas[it] ?: "Sala #$it" }
+                    ?: dto.salaInformada ?: salaInformada.orEmpty(),
+                maquina = dto.idEquipamento?.let { nomesEquipamentos[it] ?: "#$it" }
+                    ?: dto.equipamentoInformado ?: maquinaInformada.orEmpty(),
                 categoria = categoria.ifBlank { "-" },
                 prioridade = dto.prioridade,
                 descricao = descricao,

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tema ESCURO: mesmos tons do front-end (bg #050505, cards #16161e, inputs #1a1b26) -->
+    <color name="ht_bg">#050505</color>
+    <color name="ht_surface">#16161E</color>
+    <color name="ht_input">#1A1B26</color>
+    <color name="ht_border">#1F2937</color>          <!-- gray-800 -->
+    <color name="ht_border_input">#374151</color>    <!-- gray-700 -->
+    <color name="ht_text">#F3F4F6</color>            <!-- gray-100 -->
+    <color name="ht_text_secondary">#D1D5DB</color>  <!-- gray-300 -->
+    <color name="ht_text_muted">#9CA3AF</color>      <!-- gray-400 -->
+    <color name="ht_accent_soft">#3B0764</color>
+
+    <color name="ht_badge_gray_bg">#374151</color>
+    <color name="ht_badge_gray_fg">#D1D5DB</color>
+    <color name="ht_badge_blue_bg">#1E3A8A</color>
+    <color name="ht_badge_blue_fg">#93C5FD</color>
+    <color name="ht_badge_yellow_bg">#713F12</color>
+    <color name="ht_badge_yellow_fg">#FDE047</color>
+    <color name="ht_badge_purple_bg">#581C87</color>
+    <color name="ht_badge_purple_fg">#D8B4FE</color>
+    <color name="ht_badge_red_bg">#7F1D1D</color>
+    <color name="ht_badge_red_fg">#FCA5A5</color>
+    <color name="ht_badge_green_bg">#14532D</color>
+    <color name="ht_badge_green_fg">#86EFAC</color>
+</resources>

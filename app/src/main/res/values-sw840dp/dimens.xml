@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tablet grande: limita a largura do conteúdo para não esticar de ponta a ponta -->
+<resources>
+    <dimen name="ht_tela_padding_h">120dp</dimen>
+    <dimen name="ht_tela_padding_v">32dp</dimen>
+</resources>

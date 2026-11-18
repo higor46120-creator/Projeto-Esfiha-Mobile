@@ -5,6 +5,8 @@
     style="@style/Widget.Helptec.Card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginStart="@dimen/ht_item_margem_h"
+    android:layout_marginEnd="@dimen/ht_item_margem_h"
     android:layout_marginBottom="10dp"
     android:clickable="true"
     android:focusable="true"
