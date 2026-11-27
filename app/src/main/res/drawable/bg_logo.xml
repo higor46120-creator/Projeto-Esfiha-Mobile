@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Quadrado translúcido do ícone no cabeçalho (bg-white/20 + ring-white/30) -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <corners android:radius="16dp" />
+    <solid android:color="#33FFFFFF" />
+    <stroke android:width="2dp" android:color="#4DFFFFFF" />
+</shape>
