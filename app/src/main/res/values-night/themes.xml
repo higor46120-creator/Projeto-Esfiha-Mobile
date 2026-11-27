@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- No escuro, ícones da barra de status ficam claros -->
+    <style name="Theme.Helptec" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/ht_accent</item>
+        <item name="colorPrimaryVariant">@color/ht_purple</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/ht_blue</item>
+        <item name="colorSecondaryVariant">@color/ht_blue</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSurface">@color/ht_surface</item>
+        <item name="colorOnSurface">@color/ht_text</item>
+        <item name="colorError">@color/ht_danger</item>
+        <item name="android:colorBackground">@color/ht_bg</item>
+        <item name="android:windowBackground">@color/ht_bg</item>
+        <item name="android:textColorPrimary">@color/ht_text</item>
+        <item name="android:textColorSecondary">@color/ht_text_muted</item>
+        <item name="android:statusBarColor">@color/ht_bg</item>
+        <item name="android:navigationBarColor">@color/ht_bg</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="colorControlActivated">@color/ht_accent</item>
+        <item name="textInputStyle">@style/Widget.Helptec.TextInput</item>
+    </style>
+</resources>

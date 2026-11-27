@@ -11,7 +11,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:paddingStart="@dimen/ht_tela_padding_h"
+        android:paddingTop="@dimen/ht_tela_padding_v"
+        android:paddingEnd="@dimen/ht_tela_padding_h"
+        android:paddingBottom="@dimen/ht_tela_padding_v">
 
         <!-- Cabeçalho com gradiente -->
         <LinearLayout

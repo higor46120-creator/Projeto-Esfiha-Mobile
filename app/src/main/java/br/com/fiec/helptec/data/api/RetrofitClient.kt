@@ -1,13 +1,16 @@
 package br.com.fiec.helptec.data
 
 import android.content.Context
+import br.com.fiec.helptec.data.api.UnwrapJsonInterceptor
 import br.com.fiec.helptec.network.ApiConfig
 import br.com.fiec.helptec.network.TokenManager
+import com.google.gson.GsonBuilder
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+
 
 object RetrofitClient {
 
@@ -36,14 +39,21 @@ object RetrofitClient {
         }
 
         val okHttpClient = OkHttpClient.Builder()
+            //.addInterceptor(UnwrapJsonInterceptor())
             .addInterceptor(authInterceptor)
             .addInterceptor(loggingInterceptor)
+            .followRedirects(false)
+            .followSslRedirects(false)
             .build()
+
+        val gson = GsonBuilder()
+            .setLenient()
+            .create()
 
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
             .create(ApiService::class.java)
     }

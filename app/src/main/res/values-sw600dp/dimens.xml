@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tablet (menor lado com 600dp ou mais): conteúdo mais centralizado e lista em 2 colunas -->
+<resources>
+    <dimen name="ht_tela_padding_h">48dp</dimen>
+    <dimen name="ht_tela_padding_v">24dp</dimen>
+    <dimen name="ht_espaco_colunas">24dp</dimen>
+    <dimen name="ht_painel_lateral">380dp</dimen>
+    <dimen name="ht_item_margem_h">6dp</dimen>
+    <integer name="ht_colunas_lista">2</integer>
+</resources>

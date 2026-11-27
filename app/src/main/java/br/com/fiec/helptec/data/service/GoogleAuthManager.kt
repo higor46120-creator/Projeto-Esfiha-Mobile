@@ -21,7 +21,7 @@ class GoogleAuthManager(
     companion object {
         // ATENÇÃO: Coloque aqui o mesmo WEB Client ID configurado no application.yml do Spring Boot.
         // NÃO coloque o Android Client ID aqui.
-        private const val WEB_CLIENT_ID = "SEU_WEB_CLIENT_ID.apps.googleusercontent.com"
+        private const val WEB_CLIENT_ID = "766257049899-aot666ceg3076370g72t3tsfemha06gb.apps.googleusercontent.com"
     }
 
     /**

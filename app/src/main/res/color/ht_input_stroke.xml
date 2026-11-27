@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Borda do campo: roxa quando focado (como o focus:border-purple-600 do web) -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/ht_accent" android:state_focused="true" />
+    <item android:color="@color/ht_accent" android:state_hovered="true" />
+    <item android:color="@color/ht_border_input" android:state_enabled="false" />
+    <item android:color="@color/ht_border_input" />
+</selector>

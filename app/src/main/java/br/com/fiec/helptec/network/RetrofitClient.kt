@@ -1,6 +1,7 @@
 package br.com.fiec.helptec.network
 
 import br.com.fiec.helptec.data.ApiService
+import br.com.fiec.helptec.data.api.UnwrapJsonInterceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -38,6 +39,7 @@ object RetrofitClient {
         }
 
         val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor(UnwrapJsonInterceptor())
             .addInterceptor(authInterceptor)
             .addInterceptor(loggingInterceptor)
             .connectTimeout(30, TimeUnit.SECONDS)

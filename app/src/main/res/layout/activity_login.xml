@@ -11,7 +11,10 @@
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:paddingStart="@dimen/ht_tela_padding_h"
+        android:paddingTop="@dimen/ht_tela_padding_v"
+        android:paddingEnd="@dimen/ht_tela_padding_h"
+        android:paddingBottom="@dimen/ht_tela_padding_v">
 
         <!-- Alternar tema claro/escuro -->
         <ImageButton
