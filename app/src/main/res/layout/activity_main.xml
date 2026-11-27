@@ -10,7 +10,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:paddingStart="@dimen/ht_tela_padding_h"
+        android:paddingTop="@dimen/ht_tela_padding_v"
+        android:paddingEnd="@dimen/ht_tela_padding_h"
+        android:paddingBottom="@dimen/ht_tela_padding_v">
 
         <!-- Cabeçalho com gradiente (igual ao topo do formulário no web) -->
         <LinearLayout
@@ -236,15 +239,17 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
-                    android:hint="Sala">
+                    android:hint="Sala"
+                    app:helperText="Escolha da lista ou digite, se não existir">
 
-                    <!-- Lista carregada da API -->
+                    <!-- Sugestões vindas da API; o usuário também pode digitar -->
                     <com.google.android.material.textfield.MaterialAutoCompleteTextView
                         android:id="@+id/etSala"
                         style="@style/Widget.Helptec.EditText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="none" />
+                        android:completionThreshold="1"
+                        android:inputType="textCapSentences" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -252,15 +257,17 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="12dp"
-                    android:hint="Máquina / equipamento">
+                    android:hint="Máquina / equipamento"
+                    app:helperText="Escolha da lista ou digite, se não existir">
 
-                    <!-- Lista carregada da API -->
+                    <!-- Sugestões vindas da API; o usuário também pode digitar -->
                     <com.google.android.material.textfield.MaterialAutoCompleteTextView
                         android:id="@+id/etMaquina"
                         style="@style/Widget.Helptec.EditText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="none" />
+                        android:completionThreshold="1"
+                        android:inputType="textCapSentences" />
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout

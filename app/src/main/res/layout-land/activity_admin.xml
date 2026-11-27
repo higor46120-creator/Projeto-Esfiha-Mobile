@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Paisagem: filtros num painel à esquerda, lista à direita (a lista rola sozinha) -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/ht_bg"
+    android:baselineAligned="false"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/ht_tela_padding_h"
+    android:paddingTop="@dimen/ht_tela_padding_v"
+    android:paddingEnd="@dimen/ht_tela_padding_h"
+    android:paddingBottom="@dimen/ht_tela_padding_v">
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="@dimen/ht_painel_lateral"
+        android:layout_height="match_parent"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Cabeçalho com gradiente -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_header_gradient"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <FrameLayout
+                        android:layout_width="52dp"
+                        android:layout_height="52dp"
+                        android:background="@drawable/bg_logo">
+
+                        <ImageView
+                            android:layout_width="26dp"
+                            android:layout_height="26dp"
+                            android:layout_gravity="center"
+                            android:contentDescription="Gestão"
+                            android:src="@drawable/ic_check_circle"
+                            android:tint="@color/white" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Gestão de chamados"
+                            android:textColor="@color/white"
+                            android:textSize="22sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:alpha="0.9"
+                            android:text="Toque em um chamado para atualizá-lo"
+                            android:textColor="@color/white"
+                            android:textSize="13sp" />
+                    </LinearLayout>
+
+                    <ImageButton
+                        android:id="@+id/btnAlternarTemaAdmin"
+                        android:layout_width="40dp"
+                        android:layout_height="40dp"
+                        android:background="?attr/selectableItemBackgroundBorderless"
+                        android:contentDescription="Alternar tema"
+                        android:src="@drawable/ic_theme"
+                        android:tint="@color/white" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnNovoChamadoAdmin"
+                        style="@style/Widget.Helptec.Button.OnGradient"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="8dp"
+                        android:layout_weight="1"
+                        android:text="Abrir chamado"
+                        app:icon="@drawable/ic_send"
+                        app:iconSize="18dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSairAdmin"
+                        style="@style/Widget.Helptec.Button.OnGradient"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Sair"
+                        app:icon="@drawable/ic_logout"
+                        app:iconSize="18dp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Card de filtros -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.Helptec.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="16dp"
+                    android:paddingBottom="12dp">
+
+                    <!-- Busca por texto -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.Helptec.TextInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:hint="Buscar por nº, título, sala ou máquina"
+                        app:endIconMode="clear_text"
+                        app:startIconDrawable="@drawable/ic_search"
+                        app:startIconTint="@color/ht_text_muted">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etBuscaChamado"
+                            style="@style/Widget.Helptec.EditText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:imeOptions="actionSearch"
+                            android:inputType="text" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Paisagem: chips quebram linha no painel lateral -->
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/chipGroupStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:chipSpacingHorizontal="8dp"
+                        app:selectionRequired="true"
+                        app:singleLine="false"
+                        app:singleSelection="true"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="12dp"
+                        android:layout_marginEnd="16dp">
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipTodos"
+                            style="@style/Widget.Helptec.Chip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checked="true"
+                            android:text="Todos" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipAguardando"
+                            style="@style/Widget.Helptec.Chip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Aguardando aprovação" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipAprovado"
+                            style="@style/Widget.Helptec.Chip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Aprovados" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipAtendimento"
+                            style="@style/Widget.Helptec.Chip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Em atendimento" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipResolvido"
+                            style="@style/Widget.Helptec.Chip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Resolvidos" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chipReprovado"
+                            style="@style/Widget.Helptec.Chip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Reprovados" />
+                    </com.google.android.material.chip.ChipGroup>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="@dimen/ht_espaco_colunas"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <!-- Título da lista + contador -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:background="@drawable/bg_icon_soft"
+                android:contentDescription="@null"
+                android:padding="6dp"
+                android:src="@drawable/ic_list"
+                android:tint="@color/ht_accent" />
+
+            <TextView
+                style="@style/TextAppearance.Helptec.SectionTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:text="Chamados" />
+
+            <!-- Ex.: "3 de 12 chamados" -->
+            <TextView
+                android:id="@+id/tvTotalChamados"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:text=""
+                android:textColor="@color/ht_text_muted"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/progressChamados"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="16dp"
+            android:indeterminateTint="@color/ht_accent"
+            android:visibility="gone" />
+
+        <!-- Aparece quando o filtro não encontra nada -->
+        <TextView
+            android:id="@+id/tvListaVazia"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:gravity="center"
+            android:text="Nenhum chamado encontrado com esse filtro."
+            android:textColor="@color/ht_text_muted"
+            android:textSize="14sp"
+            android:visibility="gone" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvChamadosAdmin"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:nestedScrollingEnabled="true"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:paddingBottom="8dp"/>
+    </LinearLayout>
+</LinearLayout>

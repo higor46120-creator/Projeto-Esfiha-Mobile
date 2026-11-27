@@ -7,11 +7,12 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.GridLayoutManager
 import br.com.fiec.helptec.R
 import br.com.fiec.helptec.auth.LoginActivity
 import br.com.fiec.helptec.auth.Perfis
@@ -37,10 +38,16 @@ class AdminActivity : AppCompatActivity() {
     private lateinit var chamadoAdapter: ChamadoAdapter
     private lateinit var api: ApiService
 
-    private var roleAtual: String? = null
+    /** Lista, papel e estado de carregamento ficam no ViewModel para sobreviver à rotação. */
+    private val viewModel: AdminViewModel by viewModels()
 
-    /** Todos os chamados vindos do backend; os filtros trabalham em cima desta lista. */
-    private var todosChamados: List<Chamado> = emptyList()
+    private var roleAtual: String?
+        get() = viewModel.roleAtual
+        set(valor) { viewModel.roleAtual = valor }
+
+    private var todosChamados: List<Chamado>
+        get() = viewModel.todosChamados
+        set(valor) { viewModel.todosChamados = valor }
 
     /** Abre a tela de atualização e recarrega a lista quando ela devolver RESULT_OK. */
     private val atualizarChamadoLauncher =
@@ -62,14 +69,20 @@ class AdminActivity : AppCompatActivity() {
         configurarFiltros()
         configurarListeners()
 
-        verificarAcessoECarregar()
+        if (viewModel.carregado) {
+            // Tela girou: a lista já está no ViewModel (o filtro volta em onRestoreInstanceState)
+            aplicarFiltros()
+        } else {
+            // Só aplica o filtro padrão do papel na primeira abertura da tela
+            verificarAcessoECarregar(aplicarFiltroPadrao = savedInstanceState == null)
+        }
     }
 
     /**
      * Confere no backend o papel do usuário logado antes de mostrar qualquer dado.
      * Quem não tiver acesso à gestão volta para a tela de abrir chamado.
      */
-    private fun verificarAcessoECarregar() {
+    private fun verificarAcessoECarregar(aplicarFiltroPadrao: Boolean) {
         lifecycleScope.launch {
             val resposta = try {
                 withContext(Dispatchers.IO) { api.me() }
@@ -98,7 +111,7 @@ class AdminActivity : AppCompatActivity() {
             }
 
             roleAtual = role
-            selecionarFiltroPadrao(role)
+            if (aplicarFiltroPadrao) selecionarFiltroPadrao(role)
             carregarChamados()
         }
     }
@@ -109,7 +122,11 @@ class AdminActivity : AppCompatActivity() {
         chamadoAdapter = ChamadoAdapter(onItemClick = { chamado, _ -> abrirAtualizacao(chamado) })
 
         binding.rvChamadosAdmin.apply {
-            layoutManager = LinearLayoutManager(this@AdminActivity)
+            // 1 coluna no celular, 2 no tablet (values-sw600dp/dimens.xml)
+            layoutManager = GridLayoutManager(
+                this@AdminActivity,
+                resources.getInteger(R.integer.ht_colunas_lista)
+            )
             adapter = chamadoAdapter
         }
     }
@@ -145,6 +162,7 @@ class AdminActivity : AppCompatActivity() {
                         todosChamados = pagina?.itens.orEmpty()
                             .sortedByDescending { it.idChamado ?: 0L }
                             .map { Chamado.fromDto(it, nomesSalas, nomesEquip) }
+                        viewModel.carregado = true
                         Log.d(
                             "AdminActivity",
                             "Chamados recebidos: ${todosChamados.size} de ${pagina?.totalItens ?: 0} no backend"
@@ -169,8 +187,20 @@ class AdminActivity : AppCompatActivity() {
     // ---------------- Filtros ----------------
 
     private fun configurarFiltros() {
-        binding.chipGroupStatus.setOnCheckedStateChangeListener { _, _ -> aplicarFiltros() }
+        binding.chipGroupStatus.setOnCheckedStateChangeListener { grupo, _ ->
+            viewModel.chipSelecionado = grupo.checkedChipId
+            aplicarFiltros()
+        }
         binding.etBuscaChamado.doAfterTextChanged { aplicarFiltros() }
+    }
+
+    /** Depois de girar a tela, garante o mesmo chip de status que estava marcado. */
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        if (viewModel.chipSelecionado != View.NO_ID) {
+            binding.chipGroupStatus.check(viewModel.chipSelecionado)
+        }
+        aplicarFiltros()
     }
 
     /** Já abre no filtro que interessa a cada papel. */

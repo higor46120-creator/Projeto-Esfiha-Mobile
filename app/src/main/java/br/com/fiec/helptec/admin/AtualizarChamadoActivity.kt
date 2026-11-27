@@ -4,26 +4,26 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.view.View
-import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import br.com.fiec.helptec.admin.AtualizarChamadoViewModel.Companion.ACAO_APROVAR
+import br.com.fiec.helptec.admin.AtualizarChamadoViewModel.Companion.ACAO_REPROVAR
+import br.com.fiec.helptec.admin.AtualizarChamadoViewModel.Companion.ACAO_RESOLVER
+import br.com.fiec.helptec.admin.AtualizarChamadoViewModel.Estado
 import br.com.fiec.helptec.auth.LoginActivity
 import br.com.fiec.helptec.data.ApiService
-import br.com.fiec.helptec.data.ChamadoDTO
 import br.com.fiec.helptec.data.RetrofitClient
 import br.com.fiec.helptec.data.model.Chamado
 import br.com.fiec.helptec.databinding.ActivityAtualizarChamadoBinding
 import br.com.fiec.helptec.network.TokenManager
 import br.com.fiec.helptec.ui.ChamadoVisual
-import kotlinx.coroutines.Dispatchers
+import br.com.fiec.helptec.ui.adapter.SemFiltroAdapter
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
-import retrofit2.Response
 
 /**
  * Tela para atualizar UM chamado (aberta pela gestão).
@@ -41,6 +41,9 @@ class AtualizarChamadoActivity : AppCompatActivity() {
     private lateinit var binding: ActivityAtualizarChamadoBinding
     private lateinit var api: ApiService
 
+    /** Envia a ação; sobrevive à rotação da tela. */
+    private val viewModel: AtualizarChamadoViewModel by viewModels()
+
     private var idChamado: Long = -1L
     private var status: String? = null
     private var role: String? = null
@@ -56,10 +59,6 @@ class AtualizarChamadoActivity : AppCompatActivity() {
         private const val EXTRA_STATUS = "extra_status"
         private const val EXTRA_DEVOLUTIVA = "extra_devolutiva"
         private const val EXTRA_ROLE = "extra_role"
-
-        private const val ACAO_APROVAR = "Aprovar"
-        private const val ACAO_REPROVAR = "Reprovar"
-        private const val ACAO_RESOLVER = "Resolver"
 
         /** Monta o Intent com os dados do chamado selecionado na lista. */
         fun criarIntent(context: Context, chamado: Chamado, role: String?): Intent =
@@ -100,6 +99,36 @@ class AtualizarChamadoActivity : AppCompatActivity() {
 
         binding.btnVoltar.setOnClickListener { finish() }
         binding.btnExecutarAcao.setOnClickListener { executarAcao() }
+        observarEstado()
+    }
+
+    /** Reage ao andamento da ação (inclusive depois de girar a tela). */
+    private fun observarEstado() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.estado.collect { estado ->
+                    when (estado) {
+                        Estado.Ocioso -> carregando(false)
+                        Estado.Enviando -> carregando(true)
+                        Estado.Sucesso -> {
+                            Toast.makeText(
+                                this@AtualizarChamadoActivity,
+                                "Chamado #$idChamado atualizado!",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            setResult(Activity.RESULT_OK)
+                            finish()   // volta para a lista, que recarrega
+                        }
+                        Estado.SessaoExpirada -> sessaoExpirada()
+                        is Estado.Erro -> {
+                            carregando(false)
+                            Toast.makeText(this@AtualizarChamadoActivity, estado.mensagem, Toast.LENGTH_LONG).show()
+                            viewModel.erroExibido()
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private fun preencherDetalhes() {
@@ -163,7 +192,7 @@ class AtualizarChamadoActivity : AppCompatActivity() {
             return
         }
 
-        binding.spAcao.setAdapter(ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, acoes))
+        binding.spAcao.setAdapter(SemFiltroAdapter(this, acoes))
         // Já deixa selecionada a ação mais provável
         binding.spAcao.setText(acoes.first(), false)
 
@@ -186,66 +215,7 @@ class AtualizarChamadoActivity : AppCompatActivity() {
         }
         binding.tilDevolutiva.error = null
 
-        carregando(true)
-
-        lifecycleScope.launch {
-            try {
-                val response: Response<ChamadoDTO>? = withContext(Dispatchers.IO) {
-                    when (acao) {
-                        ACAO_APROVAR -> api.aprovarChamado(idChamado)
-                        ACAO_REPROVAR -> api.reprovarChamado(idChamado)
-                        ACAO_RESOLVER -> api.resolverChamado(
-                            idChamado,
-                            devolutiva.toRequestBody("text/plain; charset=utf-8".toMediaType())
-                        )
-                        else -> null
-                    }
-                }
-
-                when {
-                    response == null -> Toast.makeText(
-                        this@AtualizarChamadoActivity, "Ação inválida", Toast.LENGTH_SHORT
-                    ).show()
-
-                    response.isSuccessful -> {
-                        Toast.makeText(
-                            this@AtualizarChamadoActivity,
-                            "Chamado #$idChamado atualizado!",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        setResult(Activity.RESULT_OK)
-                        finish()   // volta para a lista, que recarrega
-                    }
-
-                    response.code() == 401 -> sessaoExpirada()
-
-                    response.code() == 403 -> Toast.makeText(
-                        this@AtualizarChamadoActivity,
-                        "Seu perfil não tem permissão para esta ação",
-                        Toast.LENGTH_LONG
-                    ).show()
-
-                    else -> {
-                        val erro = response.errorBody()?.string()
-                        Log.e("AtualizarChamado", "Erro ${response.code()}: $erro")
-                        Toast.makeText(
-                            this@AtualizarChamadoActivity,
-                            "Não foi possível: o status do chamado pode ter mudado (${response.code()})",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("AtualizarChamado", "Erro ao atualizar chamado", e)
-                Toast.makeText(
-                    this@AtualizarChamadoActivity,
-                    "Falha de conexão com o servidor",
-                    Toast.LENGTH_SHORT
-                ).show()
-            } finally {
-                if (!isFinishing) carregando(false)
-            }
-        }
+        viewModel.executar(api, idChamado, acao, devolutiva)
     }
 
     private fun carregando(ativo: Boolean) {

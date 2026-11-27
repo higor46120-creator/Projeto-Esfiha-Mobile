@@ -9,7 +9,6 @@ import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -33,6 +32,9 @@ import br.com.fiec.helptec.data.model.Chamado
 import br.com.fiec.helptec.maps.MapsActivity
 import br.com.fiec.helptec.network.RetrofitClient
 import br.com.fiec.helptec.network.TokenManager
+import br.com.fiec.helptec.ui.adapter.SemFiltroAdapter
+import android.widget.ArrayAdapter
+import androidx.core.widget.doAfterTextChanged
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -51,9 +53,6 @@ class MainActivity : ComponentActivity() {
     private var etSala: AutoCompleteTextView? = null
     private var etMaquina: AutoCompleteTextView? = null
 
-    // Itens escolhidos nos dropdowns (vindos da API)
-    private var salaSelecionada: SalaDTO? = null
-    private var equipamentoSelecionado: EquipamentoDTO? = null
     private var etDescricao: TextInputEditText? = null
     private var tilDescricao: TextInputLayout? = null
     private var spPrioridade: AutoCompleteTextView? = null
@@ -63,7 +62,7 @@ class MainActivity : ComponentActivity() {
     private var btnSair: MaterialButton? = null
     private var btnGestao: MaterialButton? = null
 
-    // ViewModel para gerenciar o estado da descrição do chamado
+    // ViewModel: guarda descrição, listas e seleções; sobrevive à rotação da tela
     private val viewModel: MainViewModel by viewModels()
 
     // Model interno para as categorias
@@ -98,6 +97,7 @@ class MainActivity : ComponentActivity() {
         // Configura a tela
         setupDropdowns()
         setupListeners()
+        configurarCamposLivres()
         setupObservers()
         carregarSalasEEquipamentos()
         mostrarBotaoGestaoSePermitido()
@@ -105,6 +105,11 @@ class MainActivity : ComponentActivity() {
 
     /** Aprovador, suporte, gerente e admin veem o botão "Gestão" no cabeçalho. */
     private fun mostrarBotaoGestaoSePermitido() {
+        // Já consultado antes de girar a tela: só reaplica
+        viewModel.podeAcessarGestao?.let { pode ->
+            btnGestao?.visibility = if (pode) View.VISIBLE else View.GONE
+            return
+        }
         lifecycleScope.launch {
             val role = try {
                 val resp = withContext(Dispatchers.IO) { apiService.me() }
@@ -125,12 +130,22 @@ class MainActivity : ComponentActivity() {
                 Log.e("HelpTecPerfil", "GET /usuarios/me: erro de rede/JSON", e)
                 null
             }
-            btnGestao?.visibility = if (Perfis.podeAcessarGestao(role)) View.VISIBLE else View.GONE
+            val pode = Perfis.podeAcessarGestao(role)
+            if (role != null) viewModel.podeAcessarGestao = pode
+            btnGestao?.visibility = if (pode) View.VISIBLE else View.GONE
         }
     }
 
     /** Busca salas e equipamentos cadastrados no backend para os dropdowns. */
     private fun carregarSalasEEquipamentos() {
+        // Depois de girar a tela as listas já estão no ViewModel: não busca de novo
+        val salasSalvas = viewModel.salas
+        val equipSalvos = viewModel.equipamentos
+        if (salasSalvas != null && equipSalvos != null) {
+            preencherSalasEEquipamentos(salasSalvas, equipSalvos)
+            return
+        }
+
         lifecycleScope.launch {
             try {
                 val respSalas = withContext(Dispatchers.IO) { apiService.listarSalas() }
@@ -144,24 +159,16 @@ class MainActivity : ComponentActivity() {
                 val salas = respSalas.body()?.itens.orEmpty()
                 val equipamentos = respEquip.body()?.itens.orEmpty()
 
-                etSala?.setAdapter(
-                    ArrayAdapter(this@MainActivity, android.R.layout.simple_dropdown_item_1line, salas)
-                )
-                etSala?.setOnItemClickListener { parent, _, position, _ ->
-                    salaSelecionada = parent.getItemAtPosition(position) as SalaDTO
+                if (respSalas.isSuccessful && respEquip.isSuccessful) {
+                    viewModel.salas = salas
+                    viewModel.equipamentos = equipamentos
                 }
-
-                etMaquina?.setAdapter(
-                    ArrayAdapter(this@MainActivity, android.R.layout.simple_dropdown_item_1line, equipamentos)
-                )
-                etMaquina?.setOnItemClickListener { parent, _, position, _ ->
-                    equipamentoSelecionado = parent.getItemAtPosition(position) as EquipamentoDTO
-                }
+                preencherSalasEEquipamentos(salas, equipamentos)
 
                 if (salas.isEmpty() || equipamentos.isEmpty()) {
                     Toast.makeText(
                         this@MainActivity,
-                        "Nenhuma sala ou equipamento cadastrado no sistema",
+                        "Nenhuma sala ou equipamento cadastrado: digite a sala e a máquina",
                         Toast.LENGTH_LONG
                     ).show()
                 }
@@ -169,12 +176,54 @@ class MainActivity : ComponentActivity() {
                 Log.e("MainActivity", "Erro ao carregar salas/equipamentos", e)
                 Toast.makeText(
                     this@MainActivity,
-                    "Não foi possível carregar salas e equipamentos",
+                    "Não foi possível carregar a lista de salas e máquinas; você pode digitá-las",
                     Toast.LENGTH_LONG
                 ).show()
             }
         }
     }
+
+    /**
+     * Sala e máquina: o usuário escolhe uma sugestão do cadastro OU digita livremente.
+     * Aqui o adapter FILTRA as sugestões conforme o texto digitado.
+     */
+    private fun preencherSalasEEquipamentos(salas: List<SalaDTO>, equipamentos: List<EquipamentoDTO>) {
+        etSala?.setAdapter(ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, salas))
+        etSala?.setOnItemClickListener { parent, _, position, _ ->
+            viewModel.salaSelecionada = parent.getItemAtPosition(position) as SalaDTO
+        }
+
+        etMaquina?.setAdapter(ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line, equipamentos))
+        etMaquina?.setOnItemClickListener { parent, _, position, _ ->
+            viewModel.equipamentoSelecionado = parent.getItemAtPosition(position) as EquipamentoDTO
+        }
+    }
+
+    /** Se o usuário editar o texto depois de escolher uma sugestão, a escolha deixa de valer. */
+    private fun configurarCamposLivres() {
+        etSala?.doAfterTextChanged { texto ->
+            if (viewModel.salaSelecionada?.toString() != texto?.toString()) viewModel.salaSelecionada = null
+        }
+        etMaquina?.doAfterTextChanged { texto ->
+            if (viewModel.equipamentoSelecionado?.toString() != texto?.toString()) viewModel.equipamentoSelecionado = null
+        }
+    }
+
+    /** Sala do cadastro que corresponde ao texto (escolhida na lista ou digitada igual). */
+    private fun salaDoCadastro(texto: String): SalaDTO? =
+        viewModel.salaSelecionada?.takeIf { it.toString() == texto }
+            ?: viewModel.salas?.firstOrNull {
+                it.nome.equals(texto, ignoreCase = true) || it.toString().equals(texto, ignoreCase = true)
+            }
+
+    /** Equipamento do cadastro que corresponde ao texto (nome, patrimônio ou "nome (patrimônio)"). */
+    private fun equipamentoDoCadastro(texto: String): EquipamentoDTO? =
+        viewModel.equipamentoSelecionado?.takeIf { it.toString() == texto }
+            ?: viewModel.equipamentos?.firstOrNull {
+                it.toString().equals(texto, ignoreCase = true) ||
+                    it.nome.equals(texto, ignoreCase = true) ||
+                    it.patrimonio.equals(texto, ignoreCase = true)
+            }
 
     private fun sessaoExpirada() {
         Toast.makeText(this, "Sessão expirada. Faça login novamente.", Toast.LENGTH_LONG).show()
@@ -200,11 +249,7 @@ class MainActivity : ComponentActivity() {
     private fun setupDropdowns() {
         // --- 1. PRIORIDADES (Alta, Média, Baixa) ---
         val prioridades = arrayOf("Alta", "Média", "Baixa")
-        val adapterPrioridade = ArrayAdapter(
-            this,
-            android.R.layout.simple_dropdown_item_1line,
-            prioridades
-        )
+        val adapterPrioridade = SemFiltroAdapter(this, prioridades.toList())
         spPrioridade?.setAdapter(adapterPrioridade)
 
         // --- 2. CATEGORIAS (com ícone) ---
@@ -293,18 +338,22 @@ class MainActivity : ComponentActivity() {
         val descricaoInput = etDescricao?.text?.toString()?.trim().orEmpty()
         val prioridadeInput = spPrioridade?.text?.toString()?.trim().orEmpty().uppercase()
         val categoria = spCategoria?.text?.toString()?.trim().orEmpty()
-        val idSala = salaSelecionada?.idSala
-        val idEquipamento = equipamentoSelecionado?.id
+        val salaTexto = etSala?.text?.toString()?.trim().orEmpty()
+        val maquinaTexto = etMaquina?.text?.toString()?.trim().orEmpty()
 
         // Validação básica dos campos da UI
         if (titulo.isEmpty() || descricaoInput.isEmpty() || prioridadeInput.isEmpty() || categoria.isEmpty()) {
             Toast.makeText(this, "Preencha todos os campos", Toast.LENGTH_SHORT).show()
             return
         }
-        if (idSala == null || idEquipamento == null) {
-            Toast.makeText(this, "Escolha a sala e a máquina na lista", Toast.LENGTH_SHORT).show()
+        if (salaTexto.isEmpty() || maquinaTexto.isEmpty()) {
+            Toast.makeText(this, "Informe a sala e a máquina (escolha da lista ou digite)", Toast.LENGTH_SHORT).show()
             return
         }
+
+        // Existe no cadastro? Usa o id. Não existe? Vai o texto digitado na descrição.
+        val sala = salaDoCadastro(salaTexto)
+        val equipamento = equipamentoDoCadastro(maquinaTexto)
 
         // Normaliza prioridade para o backend (ALTA, MEDIA, BAIXA)
         val prioridadeFormatada = when {
@@ -318,8 +367,11 @@ class MainActivity : ComponentActivity() {
             descricao = Chamado.montarDescricao(categoria, titulo, descricaoInput),
             prioridade = prioridadeFormatada,
             criticidade = prioridadeFormatada,
-            idSala = idSala,
-            idEquipamento = idEquipamento
+            idSala = sala?.idSala,
+            idEquipamento = equipamento?.id,
+            // Não existe no cadastro? Vai o texto digitado (campos próprios no backend)
+            salaInformada = if (sala == null) salaTexto else null,
+            equipamentoInformado = if (equipamento == null) maquinaTexto else null
         )
 
         btnAbrirChamado?.isEnabled = false
@@ -368,9 +420,7 @@ class MainActivity : ComponentActivity() {
         etTitulo?.text?.clear()
         etSala?.setText("", false)
         etMaquina?.setText("", false)
-        salaSelecionada = null
-        equipamentoSelecionado = null
-        viewModel.setDescricao("")
+        viewModel.limparSelecoes()
         spPrioridade?.setText("", false)
         spCategoria?.setText("", false)
     }
@@ -380,11 +430,7 @@ class MainActivity : ComponentActivity() {
      */
     private inner class CategoriaAdapter(
         private val itens: List<CategoriaItem>
-    ) : ArrayAdapter<CategoriaItem>(
-        this@MainActivity,
-        android.R.layout.simple_dropdown_item_1line,
-        itens
-    ) {
+    ) : SemFiltroAdapter<CategoriaItem>(this@MainActivity, itens) {
         override fun getView(position: Int, convertView: View?, parent: ViewGroup): View =
             criarLinha(position)
 

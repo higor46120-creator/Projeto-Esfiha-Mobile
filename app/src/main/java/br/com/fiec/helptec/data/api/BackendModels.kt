@@ -28,19 +28,25 @@ data class ChamadoDTO(
     val dataFinal: String? = null,
     val resolucao: String? = null,
     val idEquipamento: Long? = null,
-    val idSala: Long? = null
+    val idSala: Long? = null,
+    val salaInformada: String? = null,        // sala digitada (sem cadastro)
+    val equipamentoInformado: String? = null  // máquina digitada (sem cadastro)
 )
 
 /**
  * Corpo do POST /api/chamados.
  * O solicitante (idUsuario) NÃO é enviado: o backend pega do JWT.
+ * Sala/máquina do cadastro vão pelo id. Se o usuário digitou uma que não existe,
+ * o id fica nulo e o texto vai em salaInformada/equipamentoInformado.
  */
 data class NovoChamadoRequest(
     val descricao: String,
     val prioridade: String,
     val criticidade: String,
-    val idSala: Long,
-    val idEquipamento: Long
+    val idSala: Long?,
+    val idEquipamento: Long?,
+    val salaInformada: String? = null,
+    val equipamentoInformado: String? = null
 )
 
 /** SalasDTO do backend */
